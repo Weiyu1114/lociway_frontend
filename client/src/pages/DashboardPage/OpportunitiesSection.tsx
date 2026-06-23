@@ -2,8 +2,7 @@ import { ExternalLinkIcon } from 'lucide-react';
 import { useDashboard } from './context';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
-const OPPORTUNITIES_TABLE_URL =
-  'https://ccn83sh9qhvs.feishu.cn/base/QrB6bQyyraZtbzsxFcucwis0nod?table=tblvnkWF1vIvtG';
+const ADMIN_URL = '/admin';
 
 function getBusinessLineColor(line: string) {
   if (line.includes('品牌 CMO')) {
@@ -103,7 +102,7 @@ export default function OpportunitiesSection() {
           return (
             <UniversalLink
               key={opp['机会名称'] ?? index}
-              to={OPPORTUNITIES_TABLE_URL}
+              to={ADMIN_URL}
               target="_blank"
               rel="noopener noreferrer"
               className={`

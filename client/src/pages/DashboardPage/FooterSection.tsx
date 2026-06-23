@@ -10,33 +10,32 @@ import {
 } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
-const BASE_URL =
-  'https://ccn83sh9qhvs.feishu.cn/base/QrB6bQyyraZtbzsxFcucwis0nod';
+const ADMIN_URL = '/admin';
 
 const QUICK_LINKS = [
   {
     label: '业务线总览',
-    url: `${BASE_URL}?table=tblvnkWCgwXyvD`,
+    url: ADMIN_URL,
     icon: FolderIcon,
   },
   {
     label: '项目机会池',
-    url: `${BASE_URL}?table=tblvnkWF1vIvtG`,
+    url: ADMIN_URL,
     icon: FileTextIcon,
   },
   {
     label: '任务推进',
-    url: `${BASE_URL}?table=tblvnkWHD8rT1T`,
+    url: ADMIN_URL,
     icon: MessageSquareIcon,
   },
   {
     label: '资料与模板',
-    url: `${BASE_URL}?table=tblvnkWKnq1Lk4`,
+    url: ADMIN_URL,
     icon: DatabaseIcon,
   },
 ];
 
-const MATERIALS_URL = `${BASE_URL}?table=tblvnkWKnq1Lk4`;
+const MATERIALS_URL = ADMIN_URL;
 
 function getTypeStyle(type: string) {
   switch (type) {
@@ -206,7 +205,7 @@ export default function FooterSection() {
                   </div>
 
                   <div className="mt-3 flex items-center text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <span>查看飞书表格</span>
+                    <span>进入数据后台</span>
                     <ExternalLinkIcon className="w-3 h-3 ml-1" />
                   </div>
                 </UniversalLink>
@@ -273,12 +272,12 @@ export default function FooterSection() {
           })}
 
           <UniversalLink
-            to={BASE_URL}
+            to={ADMIN_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ml-auto"
           >
-            打开多维表格总盘
+            打开数据后台
             <ArrowUpRightIcon className="w-3.5 h-3.5" />
           </UniversalLink>
         </div>
@@ -287,7 +286,7 @@ export default function FooterSection() {
       {/* 底部说明 */}
       <footer className="w-full text-center py-5">
         <p className="text-xs text-muted-foreground">
-          数据来源于飞书多维表格，点击刷新可获取最新数据。日常数据维护请在飞书多维表格中操作。
+          数据来源于 LociWay 自建后台，点击刷新可获取最新数据。日常数据维护请在数据后台中操作。
         </p>
       </footer>
     </>

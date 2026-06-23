@@ -2,8 +2,7 @@ import { useDashboard } from './context';
 import { ExternalLinkIcon } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
-const FEISHU_BUSINESS_URL =
-  'https://ccn83sh9qhvs.feishu.cn/base/QrB6bQyyraZtbzsxFcucwis0nod?table=tblvnkWCgwXyvD';
+const ADMIN_URL = '/admin';
 
 interface IBusinessLineColor {
   border: string;
@@ -101,7 +100,7 @@ export default function BusinessLinesSection() {
           return (
             <UniversalLink
               key={idx}
-              to={FEISHU_BUSINESS_URL}
+              to={ADMIN_URL}
               target="_blank"
               rel="noopener noreferrer"
               className={`group block bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border-l-4 p-4 cursor-pointer ${colors.border}`}
@@ -151,7 +150,7 @@ export default function BusinessLinesSection() {
               </div>
 
               <div className="mt-4 flex items-center text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <span>查看飞书表格</span>
+                <span>进入数据后台</span>
                 <ExternalLinkIcon className="w-3 h-3 ml-1" />
               </div>
             </UniversalLink>

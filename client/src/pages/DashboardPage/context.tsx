@@ -101,7 +101,7 @@ export function DashboardProvider({ children }: IDashboardProviderProps): React.
       const nextData = await fetchDashboardData();
       setData(nextData);
       toast.success('数据已同步', {
-        description: '已从 LociWay 后端读取最新飞书数据',
+        description: '已从 LociWay 后端读取最新后台数据',
       });
     } catch {
       setData((current) => current ?? (dataJson as IDashboardData));

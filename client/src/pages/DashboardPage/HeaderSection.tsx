@@ -83,7 +83,7 @@ export default function HeaderSection() {
               className="inline-flex items-center gap-1 text-xs font-medium text-[hsl(228_28%_27%)] bg-white hover:bg-white/90 rounded-md px-2.5 py-1 transition-colors"
             >
               <ExternalLinkIcon className="w-3 h-3" />
-              <span className="hidden md:inline">打开多维表格</span>
+              <span className="hidden md:inline">打开后台</span>
             </UniversalLink>
           )}
         </div>
