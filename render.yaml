@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: lociway-frontend
+    runtime: static
+    buildCommand: npm install --ignore-scripts && npm run build:client
+    staticPublishPath: ./dist/client
+    envVars:
+      - key: VITE_LOCIWAY_API_BASE
+        value: https://lociway-backend.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
