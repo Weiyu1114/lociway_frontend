@@ -30,8 +30,7 @@
     "lint": "node ./scripts/lint.js",
     "format": "prettier --write \"{server,client,test}/**/*.{js,ts,tsx,json,md}\"",
     "prepare": "chmod +x .githooks/pre-commit 2>/dev/null; git config core.hooksPath .githooks 2>/dev/null || true",
-    "precommit": "node scripts/hooks/run-precommit.js",
-    "postinstall": "fullstack-cli action-plugin init"
+    "precommit": "node scripts/hooks/run-precommit.js"
   },
   "dependencies": {
     "@lark-apaas/fullstack-nestjs-core": "^1.1.22",
@@ -198,7 +197,7 @@
     ]
   },
   "engines": {
-    "node": ">=22.0.0",
+    "node": "22.x",
     "npm": ">=10.0.0"
   },
   "optionalDependencies": {
