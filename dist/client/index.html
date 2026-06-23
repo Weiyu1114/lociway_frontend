@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="zh"><head><script>(function(){
+  var needsPolyfill=(function(){
+    try{
+      if(typeof crypto==="undefined"||typeof crypto.randomUUID!=="function")return true;
+      if(typeof Object.hasOwn!=="function")return true;
+      if(typeof[].at!=="function")return true;
+      if(typeof[].findLast!=="function")return true;
+      return false;
+    }catch(e){return true}
+  })();
+  if(needsPolyfill){
+    document.write('<script src="/polyfills.js"><\/script>');
+  }
+})();</script><script>(function() {
+  var isModernBrowser = (function() {
+    try {
+      if (typeof CSS === 'undefined' || typeof CSS.supports !== 'function') return false;
+      if (!CSS.supports('selector(:has(*))')) return false;
+      if (!CSS.supports('color', 'color-mix(in srgb, red, blue)')) return false;
+      if (!CSS.supports('color', 'oklch(50% 0.1 0)')) return false;
+      return true;
+    } catch (e) {
+      return false;
+    }
+  })();
+
+  var cssUrls = ["/assets/index-CY8wwldb.css"];
+  var suffix = isModernBrowser ? '' : '.legacy';
+
+  cssUrls.forEach(function(url) {
+    var finalUrl = url.replace(/\.css$/, suffix + '.css');
+    document.write('<link rel="stylesheet" href="' + finalUrl + '">');
+  });
+})();</script><noscript><link rel="stylesheet" href="/assets/index-CY8wwldb.css"></noscript><script>window.csrfToken = "{{csrfToken}}";
+        window.userId = "{{userId}}";
+        window.tenantId = "{{tenantId}}";
+        window.appId = "{{appId}}";
+        window.ENVIRONMENT = "{{environment}}";
+        const appInfo = {
+          name: "{{appName}}",
+          avatar: "{{{appAvatar}}}",
+          description: "{{appDescription}}",
+        };
+        if (appInfo.name) {
+          window._appInfo = appInfo;
+        }
+        window.__BASENAME__ = "{{basename}}";</script><script>(function(g){
+  if(!window[g]){var q=[];window[g]=function(){q.push([].slice.call(arguments));};window[g].q=q;}
+  window.__slardarErrBuf=window.__slardarErrBuf||[];
+  var ref=document.referrer||'';
+  function _cap(err){
+    if(window[g]&&!window[g].q){
+      window[g]('captureException',err instanceof Error?err:new Error(String(err)),{source:'runtime-error',referrer:ref});
+    }else{
+      (window.__slardarErrBuf=window.__slardarErrBuf||[]).push(err);
+    }
+  }
+  window.addEventListener('error',function(e){
+    if(e.error==null&&e.target instanceof Element){
+      var t=e.target,url=t.src||t.href||'';
+      if(url)window[g]('captureException',new Error('Resource load failed: '+url),{team:'miaoda-sdk',source:'resource-error',resourceType:t.tagName.toLowerCase(),resourceUrl:url,referrer:ref});
+      return;
+    }
+    if(e.error!=null){
+      var err=e.error;
+      if(e.filename&&typeof err.stack==='string'&&err.stack.indexOf(e.filename)<0){
+        try{err.stack+='\n    at '+e.filename+':'+(e.lineno||0)+':'+(e.colno||0);}catch(ex){}
+      }
+      _cap(err);
+    }else{
+      var msg=e.message||'Script error';
+      var err=new Error(msg);
+      if(e.filename)err.stack=msg+'\n    at '+e.filename+':'+(e.lineno||0)+':'+(e.colno||0);
+      _cap(err);
+    }
+  },true);
+  window.addEventListener('unhandledrejection',function(e){
+    if(e.reason!=null)_cap(e.reason instanceof Error?e.reason:new Error(String(e.reason)));
+  });
+})('KSlardarWeb');</script><script>const slardarScript = document.createElement('script');
+    slardarScript.src = 'https://lf3-short.ibytedapm.com/slardar/fe/sdk-web/browser.cn.js?bid=apaas_miaoda&globalName=KSlardarWeb';
+    slardarScript.crossOrigin = 'anonymous';
+
+    // Add onload event handler
+    slardarScript.onload = function() {
+      // Initialize after script loads
+      if (window.KSlardarWeb) {
+        window.KSlardarWeb('context.merge', {
+          tenantId: window.tenantId ?? '',
+          appId: window.appId ?? '',
+          referrer: document.referrer || '',
+        });
+        window.KSlardarWeb('init', {
+          bid: 'apaas_miaoda',
+          env: window.ENVIRONMENT || 'online',
+          userId: window.userId ?? '',
+        });
+        window.KSlardarWeb('start');
+        // Flush JS runtime errors that occurred before SDK loaded
+        var buf = window.__slardarErrBuf || [];
+        window.__slardarErrBuf = [];
+        buf.forEach(function(err) {
+          window.KSlardarWeb('captureException', err instanceof Error ? err : new Error(String(err)), { source: 'pre-sdk-error', referrer: document.referrer || '' });
+        });
+      }
+    };
+
+    // Add error handler
+    slardarScript.onerror = function() {
+      console.warn('Failed to load Slardar script');
+    };
+
+    // Add script to page
+    document.head.appendChild(slardarScript);</script><script src="https://sf3-scmcdn-cn.feishucdn.com/obj/unpkg/byted/performance/0.1.2/dist/performance.iife.js" crossorigin="anonymous" defer="defer"></script><script>(function (win, export_obj) {
+    win['LogAnalyticsObject'] = export_obj;
+    if (!win[export_obj]) {
+      function _collect() {
+        _collect.q.push(arguments);
+      }
+      _collect.q = _collect.q || [];
+      win[export_obj] = _collect;
+    }
+    win[export_obj].l = +new Date();
+  })(window, 'collectEvent');
+
+  // Create tea sdk script element
+    const teaScript = document.createElement('script');
+    teaScript.src = 'https://lf3-cdn-tos.bytescm.com/obj/static/log-sdk/collect/5.1/collect.js';
+    teaScript.crossOrigin = 'anonymous';
+    teaScript.async = true;
+
+    // Add error handler
+    teaScript.onerror = function() {
+      console.warn('Failed to load Tea script');
+    };
+
+    // Add script to page
+    document.head.appendChild(teaScript);</script><script>window.__STATIC_JSON__ = {"lociway_data":{"meta":{"base_url":"https://ccn83sh9qhvs.feishu.cn/base/QrB6bQyyraZtbzsxFcucwis0nod","updated_at":"2026-06-23T05:24:46.638Z"},"dashboard":[{"标题":"LociWay 乐沩","排序":1,"模块类型":"项目简介","内容":"用小核心团队连接外部增长资源网络，帮助出海品牌先判断、再验证、后放大。","标签":"核心"},{"标签":"核心","标题":"0-30 天：启动与产品化","内容":"跑通 2-3 个脱敏项目，产品化第一批服务，建立 CRM 与报价模型。","模块类型":"当前阶段","排序":2},{"内容":"1. 明确新衍科技交付边界\n2. 准备 Jason 与 Lucas 沟通提纲\n3. 统一产品线与报价口径\n4. 完成 CRM 和项目总盘搭建","模块类型":"本周重点","排序":3,"标签":"核心","标题":"本周重点（6.22-6.28）"},{"排序":4,"标签":"入口","模块类型":"业务线入口","标题":"小 b 分销","内容":"后置渠道/分销验证 | 状态：进行中 | 负责人：Jason / Louis","关联业务线":"小 b 分销"},{"内容":"refurb / open-box / liquidation 小批量测试 | 状态：待沟通 | 负责人：Jason","标题":"二手翻新销售","关联业务线":"二手翻新销售","排序":5,"标签":"入口","模块类型":"业务线入口"},{"关联业务线":"品牌 CMO","排序":6,"模块类型":"业务线入口","内容":"出海判断 + Launch + Growth Advisor | 状态：进行中 | 负责人：Rucia / Louis","标签":"入口","标题":"品牌 CMO"},{"关联业务线":"品牌 CMO","模块类型":"重点机会","标题":"新衍科技无人机","标签":"跟进","排序":7,"内容":"品牌 CMO / Offing | 预计 6.8 万 | 成交概率：中 | 二次沟通前"},{"模块类型":"重点机会","标签":"探索","内容":"二手翻新销售 | 预计金额待定 | 成交概率：低-中 | 第一轮沟通前","标题":"Lucas refurb 资源","关联业务线":"二手翻新销售","排序":8},{"标题":"P0 本周必须","内容":"1. 明确新衍科技 Launch Readiness Sprint 交付边界（Louis）\n2. 准备 Jason 与 Lucas 第一轮沟通问题（Jason）\n3. 建立 CRM 和项目机会池字段（Louis）","排序":9,"标签":"紧急","模块类型":"本周任务"},{"内容":"产品服务介绍页 | 可测 SKU 与责任边界表 | refurb 货源沟通提纲 | CRM 总盘模板","排序":10,"标题":"常用资料","标签":"工具","模块类型":"资料入口"}],"business":[{"风险边界":"不承诺库存和售后","状态":"进行中","当前阶段":"探索","本周目标":"确认可测渠道与小批量规则","业务线":"小 b 分销","下一步动作":"整理可测试 SKU 与责任边界","商业模式":"分佣/代售/渠道合作","报价/利润逻辑":"先验证再放量","负责人":"Rucia / Jason / Louis","定位":"后置渠道/分销验证"},{"本周目标":"Lucas 第一轮确认兴趣和资源","商业模式":"差价/分成/渠道销售","状态":"待沟通","风险边界":"不吃大货、不先承诺广告","定位":"refurb / open-box / liquidation 小批量测试","下一步动作":"拿 SKU list、报价、履约费用表","业务线":"二手翻新销售","负责人":"Jason / Rucia","报价/利润逻辑":"10-20 台测试","当前阶段":"初聊"},{"风险边界":"不承诺 GMV、不免费做完整方案","下一步动作":"整理产品页和报价口径","报价/利润逻辑":"8.8 万起 / 18 万起 / 3 万月费起","当前阶段":"产品化中","商业模式":"项目费/月费/upside","负责人":"Rucia / Jason / Louis","状态":"进行中","定位":"出海判断 + Launch + Growth Advisor","业务线":"品牌 CMO","本周目标":"把 Offing/Launch/Growth 产品边界定清楚"}],"opportunities":[{"状态":"重点跟进","预计金额":"6.8 万","业务线":"品牌 CMO / Offing","负责人":"Jason / Rucia / Louis","客户/合作方":"新衍科技","关键风险":"新品定义不清、只要免费方案","成交概率":"中","当前阶段":"二次沟通前","机会名称":"新衍科技无人机","来源人":"Jason","下一步动作":"确认新品定义、预算、决策人"},{"来源人":"Jason","下一步动作":"确认资源类型和是否接受 10-20 台测试","业务线":"二手翻新销售","客户/合作方":"Lucas / Eric","负责人":"Jason","关键风险":"货源性质、退货责任、履约成本不清","机会名称":"Lucas refurb 资源","成交概率":"低-中","状态":"探索","当前阶段":"第一轮沟通前","预计金额":"待定"}],"tasks":[{"任务":"明确新衍科技 Launch Readiness Sprint 交付边界","状态":"进行中","负责人":"Louis","所属项目":"新衍科技无人机","优先级":"P0 本周必须","备注":"只做轻量诊断，不做完整 launch","截止时间":"2026-06-27T18:00:00+08:00","产出物":"交付物/周期/修订范围说明"},{"任务":"准备 Jason 与 Lucas 第一轮沟通问题","产出物":"沟通提纲","状态":"待开始","负责人":"Jason","所属项目":"Lucas refurb 资源","优先级":"P0 本周必须","备注":"目标是确认兴趣、资源和小批量测试可能","截止时间":"2026-06-27T18:00:00+08:00"},{"截止时间":"2026-07-04T18:00:00+08:00","状态":"进行中","产出物":"产品线报价表","负责人":"Rucia / Louis","所属项目":"乐沩总盘","任务":"统一乐沩产品线与报价口径","备注":"Offing、Launch、Harbor、Beacon、Growth","优先级":"P1 近期推进"},{"状态":"进行中","负责人":"Louis","所属项目":"乐沩总盘","产出物":"飞书多维表格","备注":"先简洁，后续再自动化","优先级":"P0 本周必须","任务":"建立 CRM 和项目机会池字段","截止时间":"2026-06-27T18:00:00+08:00"}],"materials":[{"版本日期":"2026-06-23T12:00:00+08:00","对应业务线":"品牌 CMO","负责人":"Rucia / Louis","用途":"客户沟通与品牌首发前期判断","备注":"产品边界和报价口径整理中","类型":"产品文档","资料名称":"乐沩产品服务介绍页（Offing/Launch/Growth）"},{"资料名称":"小 b 分销可测 SKU 与责任边界表","对应业务线":"小 b 分销","用途":"确认首批可测试商品和合作规则","版本日期":"2026-06-23T12:00:00+08:00","类型":"运营模板","负责人":"Jason / Louis","备注":"本周整理中"},{"备注":"待开始","资料名称":"Lucas refurb 货源沟通提纲","对应业务线":"二手翻新销售","负责人":"Jason","版本日期":"2026-06-23T12:00:00+08:00","类型":"沟通模板","用途":"第一轮沟通确认兴趣和资源"},{"备注":"本表即为此模板","类型":"管理模板","资料名称":"乐沩 CRM 与项目总盘模板","对应业务线":"乐沩总盘","负责人":"Louis","用途":"项目机会、任务、资料统一管理","版本日期":"2026-06-23T12:00:00+08:00"}]}};</script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="{{appAvatar}}"><title>{{appName}}</title><script>try {
+      window.__platform__ = JSON.parse('{{{__platform__}}}');
+    } catch (e) {
+      console.error('Failed to parse __platform__', e);
+    }</script><script type="module" crossorigin src="/assets/index-VKT_eWu0.js"></script><meta property="og:title" content="{{appName}}"><meta property="og:description" content="{{appDescription}}"><meta property="og:image" content="{{appAvatar}}"><meta property="og:url" content="{{currentUrl}}"><meta name="description" content="{{appDescription}}"></head><body><div id="root"></div></body></html>
