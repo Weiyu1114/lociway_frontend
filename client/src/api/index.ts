@@ -43,13 +43,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function fetchDashboardData(): Promise<IDashboardData> {
   try {
-    const [dashboard, business, opportunities, tasks, materials] =
+    const [dashboard, business, opportunities, tasks, materials, meetings] =
       await Promise.all([
         requestData<IDashboardData['dashboard'][number]>('/api/dashboard'),
         requestData<IDashboardData['business'][number]>('/api/business'),
         requestData<IDashboardData['opportunities'][number]>('/api/opportunities'),
         requestData<IDashboardData['tasks'][number]>('/api/tasks'),
         requestData<IDashboardData['materials'][number]>('/api/resources'),
+        requestData<NonNullable<IDashboardData['meetings']>[number]>('/api/meetings'),
       ]);
 
     return {
@@ -62,6 +63,7 @@ export async function fetchDashboardData(): Promise<IDashboardData> {
       opportunities,
       tasks,
       materials,
+      meetings,
     };
   } catch (error) {
     logger.error('获取 LociWay 仪表盘数据失败', error);
@@ -117,4 +119,25 @@ export async function deleteAdminRecord(
   await requestJson<{ ok: boolean }>(`/api/admin/${tableKey}/${recordId}`, {
     method: 'DELETE',
   });
+}
+
+export async function uploadMeetingFile(formData: FormData): Promise<{
+  meeting: Record<string, unknown>;
+  analysis: Record<string, unknown>;
+  created_tasks: Array<Record<string, unknown>>;
+}> {
+  const response = await fetch(`${API_BASE}/api/meetings/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`会议文件上传失败：${response.status}`);
+  }
+
+  return (await response.json()) as {
+    meeting: Record<string, unknown>;
+    analysis: Record<string, unknown>;
+    created_tasks: Array<Record<string, unknown>>;
+  };
 }

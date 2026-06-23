@@ -61,6 +61,22 @@ export interface IDashboardData {
     '资料名称': string;
     '对应业务线': string;
   }>;
+  meetings?: Array<{
+    '会议标题': string;
+    '品牌方': string;
+    '会议日期': string;
+    '参会人': string;
+    '文件名': string;
+    '文件类型': string;
+    '转写状态': string;
+    'AI总结': string;
+    '关键点': string;
+    '行动项': string;
+    '风险': string;
+    '下一步建议': string;
+    '原文摘录': string;
+    '文件路径': string;
+  }>;
   dashboard: Array<{
     '排序': number;
     '标签': string;

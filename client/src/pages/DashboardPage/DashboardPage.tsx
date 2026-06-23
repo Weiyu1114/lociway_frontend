@@ -5,6 +5,7 @@ import KpiCardsSection from './KpiCardsSection';
 import PhaseFocusSection from './PhaseFocusSection';
 import BusinessLinesSection from './BusinessLinesSection';
 import OpportunitiesSection from './OpportunitiesSection';
+import MeetingSummariesSection from './MeetingSummariesSection';
 import TasksSection from './TasksSection';
 import FooterSection from './FooterSection';
 
@@ -31,6 +32,7 @@ function DashboardContent() {
         <PhaseFocusSection />
         <BusinessLinesSection />
         <OpportunitiesSection />
+        <MeetingSummariesSection />
         <TasksSection />
         <FooterSection />
       </div>

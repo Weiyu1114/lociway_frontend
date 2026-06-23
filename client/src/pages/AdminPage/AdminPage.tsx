@@ -4,6 +4,7 @@ import {
   deleteAdminRecord,
   fetchAdminRecords,
   fetchAdminSchema,
+  uploadMeetingFile,
   updateAdminRecord,
 } from '@/api';
 import { ArrowLeftIcon, PlusIcon, RefreshCwIcon, SaveIcon, Trash2Icon } from 'lucide-react';
@@ -16,6 +17,7 @@ const TABLE_LABELS: Record<string, string> = {
   opportunities: '机会池',
   tasks: '任务',
   resources: '资料',
+  meetings: '会议记录',
 };
 
 type AdminRecord = Record<string, unknown> & { _record_id?: string };
@@ -41,6 +43,14 @@ export default function AdminPage() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadForm, setUploadForm] = useState({
+    meeting_title: '',
+    brand: '',
+    participants: '',
+    meeting_date: '',
+  });
+  const [meetingFile, setMeetingFile] = useState<File | null>(null);
 
   const fields = schema[tableKey] ?? [];
   const selectedRecord = useMemo(
@@ -134,6 +144,39 @@ export default function AdminPage() {
     }
   }
 
+  async function uploadMeeting() {
+    if (!meetingFile) {
+      toast.error('请先选择文件');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const payload = new FormData();
+      payload.append('file', meetingFile);
+      Object.entries(uploadForm).forEach(([key, value]) => {
+        payload.append(key, value);
+      });
+
+      const result = await uploadMeetingFile(payload);
+      toast.success('会议记录已生成', {
+        description: `自动创建 ${result.created_tasks.length} 个任务`,
+      });
+      setMeetingFile(null);
+      setUploadForm({
+        meeting_title: '',
+        brand: '',
+        participants: '',
+        meeting_date: '',
+      });
+      await loadRecords('meetings');
+    } catch {
+      toast.error('上传或 AI 总结失败');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[hsl(210_28%_96%)] text-foreground">
       <header className="border-b border-border bg-card">
@@ -181,6 +224,78 @@ export default function AdminPage() {
         </aside>
 
         <section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="space-y-5">
+          {tableKey === 'meetings' && (
+            <div className="rounded-lg border border-border bg-card p-4">
+              <div className="mb-3">
+                <h2 className="text-sm font-bold">上传会议文件</h2>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  支持 PDF、Word、TXT、Markdown；录音会先归档，语音转写稍后接入。
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <input
+                  value={uploadForm.meeting_title}
+                  onChange={(event) =>
+                    setUploadForm((current) => ({
+                      ...current,
+                      meeting_title: event.target.value,
+                    }))
+                  }
+                  placeholder="会议标题"
+                  className="h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                />
+                <input
+                  value={uploadForm.brand}
+                  onChange={(event) =>
+                    setUploadForm((current) => ({ ...current, brand: event.target.value }))
+                  }
+                  placeholder="品牌方 / 客户"
+                  className="h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                />
+                <input
+                  value={uploadForm.participants}
+                  onChange={(event) =>
+                    setUploadForm((current) => ({
+                      ...current,
+                      participants: event.target.value,
+                    }))
+                  }
+                  placeholder="参会人，例如 Louis / Jason / 品牌方"
+                  className="h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                />
+                <input
+                  value={uploadForm.meeting_date}
+                  onChange={(event) =>
+                    setUploadForm((current) => ({
+                      ...current,
+                      meeting_date: event.target.value,
+                    }))
+                  }
+                  placeholder="会议日期，例如 2026-06-23"
+                  className="h-9 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                />
+              </div>
+
+              <div className="mt-3 flex flex-col gap-3 md:flex-row">
+                <input
+                  type="file"
+                  accept=".pdf,.docx,.txt,.md,.csv,.mp3,.m4a,.wav,.aac,.ogg,.flac,.mp4"
+                  onChange={(event) => setMeetingFile(event.target.files?.[0] ?? null)}
+                  className="min-h-9 flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
+                />
+                <button
+                  onClick={uploadMeeting}
+                  disabled={uploading}
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {uploading ? 'AI 总结中...' : '上传并总结'}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-lg border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <h2 className="text-sm font-bold">{TABLE_LABELS[tableKey] ?? tableKey}</h2>
@@ -219,6 +334,7 @@ export default function AdminPage() {
                 })
               )}
             </div>
+          </div>
           </div>
 
           <div className="rounded-lg border border-border bg-card">
