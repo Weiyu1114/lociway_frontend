@@ -12,6 +12,10 @@ import { createPortal } from 'react-dom';
 import { Toaster } from '@client/src/components/ui/sonner';
 
 const MainApp = () => {
+  React.useEffect(() => {
+    document.title = 'LociWay 乐沩';
+  }, []);
+
   return (
     <HashRouter>
       <AppContainer defaultTheme="light">
