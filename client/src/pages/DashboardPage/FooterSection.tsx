@@ -11,26 +11,28 @@ import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLi
 import { toApiUrl } from '@/api';
 
 const ADMIN_URL = '/#/admin';
+const adminRecordUrl = (table: string, id?: string) =>
+  id ? `/#/admin?table=${table}&id=${encodeURIComponent(id)}` : `/#/admin?table=${table}`;
 
 const QUICK_LINKS = [
   {
     label: '业务线总览',
-    url: ADMIN_URL,
+    url: adminRecordUrl('business'),
     icon: FolderIcon,
   },
   {
     label: '项目机会池',
-    url: ADMIN_URL,
+    url: adminRecordUrl('opportunities'),
     icon: FileTextIcon,
   },
   {
     label: '任务推进',
-    url: ADMIN_URL,
+    url: adminRecordUrl('tasks'),
     icon: MessageSquareIcon,
   },
   {
     label: '资料与模板',
-    url: ADMIN_URL,
+    url: adminRecordUrl('resources'),
     icon: DatabaseIcon,
   },
 ];
@@ -126,7 +128,9 @@ export default function FooterSection() {
               const typeStyle = getTypeStyle(mat['类型'] ?? '');
               const Icon = getTypeIcon(mat['类型'] ?? '');
               const bizColor = getBizLineColor(mat['对应业务线'] ?? '');
-              const materialUrl = mat['文件URL'] ? toApiUrl(mat['文件URL']) : ADMIN_URL;
+              const materialUrl = mat['文件URL']
+                ? toApiUrl(mat['文件URL'])
+                : adminRecordUrl('resources', mat._record_id);
 
               return (
                 <UniversalLink

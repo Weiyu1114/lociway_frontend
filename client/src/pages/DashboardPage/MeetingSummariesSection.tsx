@@ -2,6 +2,10 @@ import { CalendarDaysIcon, ExternalLinkIcon } from 'lucide-react';
 import { toApiUrl } from '@/api';
 import { useDashboard } from './context';
 
+function adminRecordUrl(id?: string) {
+  return id ? `/#/admin?table=meetings&id=${encodeURIComponent(id)}` : '/#/admin?table=meetings';
+}
+
 function formatActionItems(raw: string): string[] {
   if (!raw) return [];
   try {
@@ -52,6 +56,7 @@ export default function MeetingSummariesSection() {
           const actions = formatActionItems(meeting['行动项'] ?? '');
           const date = splitDate(meeting['会议日期'] ?? '');
           const fileUrl = toApiUrl(meeting['文件URL']);
+          const detailUrl = adminRecordUrl(meeting._record_id);
 
           return (
             <article
@@ -77,17 +82,28 @@ export default function MeetingSummariesSection() {
                       {meeting['品牌方'] || '品牌方待定'} · {meeting['参会人'] || '参会人待定'}
                     </p>
                   </div>
-                  {fileUrl && (
+                  <div className="flex shrink-0 items-center gap-2">
+                    {fileUrl && (
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent"
+                      >
+                        预览文件
+                        <ExternalLinkIcon className="h-3.5 w-3.5" />
+                      </a>
+                    )}
                     <a
-                      href={fileUrl}
+                      href={detailUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-accent"
                     >
-                      预览文件
+                      查看详情
                       <ExternalLinkIcon className="h-3.5 w-3.5" />
                     </a>
-                  )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">

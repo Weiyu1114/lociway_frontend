@@ -2,7 +2,9 @@ import { useDashboard } from './context';
 import { ExternalLinkIcon } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
-const ADMIN_URL = '/admin';
+function adminRecordUrl(id?: string) {
+  return id ? `/#/admin?table=business&id=${encodeURIComponent(id)}` : '/#/admin?table=business';
+}
 
 interface IBusinessLineColor {
   border: string;
@@ -100,7 +102,7 @@ export default function BusinessLinesSection() {
           return (
             <UniversalLink
               key={idx}
-              to={ADMIN_URL}
+              to={adminRecordUrl(line._record_id)}
               target="_blank"
               rel="noopener noreferrer"
               className={`group block bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border-l-4 p-4 cursor-pointer ${colors.border}`}

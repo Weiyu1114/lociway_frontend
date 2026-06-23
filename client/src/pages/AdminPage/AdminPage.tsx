@@ -4,6 +4,7 @@ import {
   deleteAdminRecord,
   fetchAdminRecords,
   fetchAdminSchema,
+  summarizeAdminRecord,
   toApiUrl,
   uploadAdminFile,
   updateAdminRecord,
@@ -11,6 +12,7 @@ import {
 import {
   ArrowLeftIcon,
   ExternalLinkIcon,
+  BotIcon,
   FileUpIcon,
   PencilIcon,
   PlusIcon,
@@ -19,7 +21,7 @@ import {
   Trash2Icon,
   XIcon,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const TABLE_LABELS: Record<string, string> = {
@@ -67,6 +69,8 @@ function displayFields(fields: string[]) {
 }
 
 export default function AdminPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [schema, setSchema] = useState<Record<string, string[]>>({});
   const [tableKey, setTableKey] = useState('business');
   const [records, setRecords] = useState<AdminRecord[]>([]);
@@ -77,8 +81,10 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [summarizing, setSummarizing] = useState(false);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const fields = schema[tableKey] ?? [];
   const selectedRecord = useMemo(
@@ -94,13 +100,20 @@ export default function AdminPage() {
     }
   }
 
-  async function loadRecords(nextTableKey = tableKey) {
+  function adminPath(nextTableKey: string, id = '') {
+    return `/admin?table=${encodeURIComponent(nextTableKey)}${id ? `&id=${encodeURIComponent(id)}` : ''}`;
+  }
+
+  async function loadRecords(nextTableKey = tableKey, preferredId = '') {
     setLoading(true);
     try {
       const response = await fetchAdminRecords(nextTableKey);
       const nextRecords = response.data as AdminRecord[];
       setRecords(nextRecords);
       setSelectedId((current) => {
+        if (preferredId && nextRecords.some((record) => stringifyValue(record._record_id) === preferredId)) {
+          return preferredId;
+        }
         if (nextRecords.some((record) => stringifyValue(record._record_id) === current)) {
           return current;
         }
@@ -114,8 +127,14 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const initialTable = params.get('table') || tableKey;
+    const initialId = params.get('id') || '';
     loadSchema()
-      .then(() => loadRecords(tableKey))
+      .then(() => {
+        setTableKey(initialTable);
+        return loadRecords(initialTable, initialId);
+      })
       .catch(() => toast.error('后台初始化失败'));
   }, []);
 
@@ -134,7 +153,9 @@ export default function AdminPage() {
   async function switchTable(nextTableKey: string) {
     setTableKey(nextTableKey);
     setUploadFile(null);
-    setUploadTitle('');
+    setUploadProgress(0);
+    setUploadOpen(false);
+    navigate(adminPath(nextTableKey));
     await loadRecords(nextTableKey);
   }
 
@@ -178,24 +199,45 @@ export default function AdminPage() {
       toast.error('请先选择文件');
       return;
     }
+    if (!selectedRecord || !selectedId) {
+      toast.error('请先选择一条数据');
+      return;
+    }
 
     setUploading(true);
+    setUploadProgress(0);
     try {
       const payload = new FormData();
       payload.append('file', uploadFile);
       payload.append('record_id', selectedId);
-      payload.append('title', uploadTitle || firstText(selectedRecord ?? {}, TITLE_FIELDS));
-      const result = await uploadAdminFile(tableKey, payload);
-      toast.success('文件已上传并生成 AI 总结', {
-        description: `自动创建 ${result.created_tasks.length} 个行动任务`,
+      payload.append('title', firstText(selectedRecord ?? {}, TITLE_FIELDS));
+      await uploadAdminFile(tableKey, payload, setUploadProgress);
+      toast.success('文件已上传', {
+        description: '需要 AI 总结时，可点击右侧的 AI 总结按钮',
       });
       setUploadFile(null);
-      setUploadTitle('');
-      await loadRecords(tableKey);
+      setUploadOpen(false);
+      await loadRecords(tableKey, selectedId);
     } catch {
-      toast.error('上传或 AI 总结失败');
+      toast.error('上传失败');
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function summarizeRecord() {
+    if (!selectedId) return;
+    setSummarizing(true);
+    try {
+      const result = await summarizeAdminRecord(tableKey, selectedId);
+      toast.success('AI 总结已生成', {
+        description: `自动创建 ${result.created_tasks.length} 个行动任务`,
+      });
+      await loadRecords(tableKey, selectedId);
+    } catch {
+      toast.error('AI 总结失败，请确认已上传可解析的文档');
+    } finally {
+      setSummarizing(false);
     }
   }
 
@@ -251,37 +293,6 @@ export default function AdminPage() {
 
         <section className="grid grid-cols-1 gap-5 xl:grid-cols-[390px_minmax(0,1fr)]">
           <div className="space-y-5">
-            <div className="rounded-lg border border-border bg-card p-4">
-              <div className="mb-3">
-                <h2 className="text-sm font-bold">上传文档并 AI 总结</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  可挂到当前选中记录；不选记录时会创建新记录。PDF 可直接网页预览。
-                </p>
-              </div>
-              <input
-                value={uploadTitle}
-                onChange={(event) => setUploadTitle(event.target.value)}
-                placeholder="标题，可选"
-                className="mb-3 h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
-              />
-              <div className="flex flex-col gap-3">
-                <input
-                  type="file"
-                  accept=".pdf,.docx,.txt,.md,.csv,.mp3,.m4a,.wav,.aac,.ogg,.flac,.mp4"
-                  onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
-                  className="min-h-9 rounded-md border border-border bg-background px-3 py-1.5 text-sm"
-                />
-                <button
-                  onClick={uploadFileForTable}
-                  disabled={uploading}
-                  className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                >
-                  <FileUpIcon className="h-4 w-4" />
-                  {uploading ? 'AI 总结中...' : '上传并总结'}
-                </button>
-              </div>
-            </div>
-
             <div className="rounded-lg border border-border bg-card">
               <div className="flex items-center justify-between border-b border-border px-4 py-3">
                 <h2 className="text-sm font-bold">{TABLE_LABELS[tableKey] ?? tableKey}</h2>
@@ -311,7 +322,13 @@ export default function AdminPage() {
                     return (
                       <button
                         key={id}
-                        onClick={() => setSelectedId(id)}
+                        onClick={() => {
+                          setSelectedId(id);
+                          setUploadOpen(false);
+                          setUploadFile(null);
+                          setUploadProgress(0);
+                          navigate(adminPath(tableKey, id));
+                        }}
                         className={`block w-full border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-accent ${
                           selectedId === id ? 'bg-[hsl(24_100%_97%)]' : ''
                         }`}
@@ -337,6 +354,25 @@ export default function AdminPage() {
                 )}
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                {selectedRecord && (
+                  <>
+                    <button
+                      onClick={() => setUploadOpen((current) => !current)}
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                    >
+                      <PlusIcon className="h-3.5 w-3.5" />
+                      上传文档
+                    </button>
+                    <button
+                      onClick={summarizeRecord}
+                      disabled={summarizing}
+                      className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <BotIcon className="h-3.5 w-3.5" />
+                      {summarizing ? '总结中' : 'AI 总结'}
+                    </button>
+                  </>
+                )}
                 {fileUrl && (
                   <a
                     href={fileUrl}
@@ -363,40 +399,83 @@ export default function AdminPage() {
             {!selectedRecord ? (
               <div className="p-8 text-sm text-muted-foreground">请选择左侧记录查看详情。</div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-2">
-                {displayFields(fields).map((field) => {
-                  const value = stringifyValue(selectedRecord[field]);
-                  if (!value) return null;
-                  const isLarge = ['AI总结', '行动项', '关键点', '风险'].includes(field);
-                  return (
-                    <section
-                      key={field}
-                      className={`rounded-lg border border-border bg-background p-4 ${
-                        isLarge ? 'lg:col-span-2 min-h-36' : ''
-                      }`}
-                    >
-                      <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                        {field}
+              <>
+                {uploadOpen && (
+                  <div className="border-b border-border bg-[hsl(210_28%_98%)] px-5 py-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                      <label className="flex min-h-12 flex-1 cursor-pointer items-center gap-3 rounded-md border border-dashed border-border bg-card px-4 py-3 hover:bg-accent">
+                        <FileUpIcon className="h-4 w-4 text-muted-foreground" />
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium">
+                            {uploadFile?.name ?? '选择要挂到这条数据里的文件'}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            支持 PDF、Word、文本；上传后可预览，AI 总结需手动点击
+                          </div>
+                        </div>
+                        <input
+                          type="file"
+                          className="hidden"
+                          onChange={(event) => {
+                            setUploadFile(event.target.files?.[0] ?? null);
+                            setUploadProgress(0);
+                          }}
+                        />
+                      </label>
+                      <button
+                        onClick={uploadFileForTable}
+                        disabled={uploading}
+                        className="inline-flex h-12 items-center justify-center gap-1 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {uploading ? `上传中 ${uploadProgress}%` : '确认上传'}
+                      </button>
+                    </div>
+                    {(uploading || uploadProgress > 0) && (
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${uploadProgress}%` }}
+                        />
                       </div>
-                      {field === '文件URL' ? (
-                        <a
-                          href={toApiUrl(value)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                        >
-                          打开文件预览
-                          <ExternalLinkIcon className="h-3.5 w-3.5" />
-                        </a>
-                      ) : (
-                        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                          {value}
-                        </p>
-                      )}
-                    </section>
-                  );
-                })}
-              </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-2">
+                  {displayFields(fields).map((field) => {
+                    const value = stringifyValue(selectedRecord[field]);
+                    if (!value) return null;
+                    const isLarge = ['AI总结', '行动项', '关键点', '风险'].includes(field);
+                    return (
+                      <section
+                        key={field}
+                        className={`rounded-lg border border-border bg-background p-4 ${
+                          isLarge ? 'min-h-48 lg:col-span-2' : ''
+                        }`}
+                      >
+                        <div className="mb-2 text-xs font-semibold text-muted-foreground">
+                          {field}
+                        </div>
+                        {field === '文件URL' ? (
+                          <a
+                            href={toApiUrl(value)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+                          >
+                            打开文件预览
+                            <ExternalLinkIcon className="h-3.5 w-3.5" />
+                          </a>
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                            {value}
+                          </p>
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+              </>
             )}
           </article>
         </section>

@@ -3,7 +3,9 @@ import { CalendarIcon, ExternalLinkIcon } from 'lucide-react';
 import dayjs from 'dayjs';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
-const ADMIN_URL = '/admin';
+function adminRecordUrl(id?: string) {
+  return id ? `/#/admin?table=tasks&id=${encodeURIComponent(id)}` : '/#/admin?table=tasks';
+}
 
 const PRIORITY_ORDER: Record<string, number> = {
   'P0 本周必须': 0,
@@ -111,7 +113,7 @@ export default function TasksSection() {
         {sortedTasks.map((task, i) => (
           <UniversalLink
             key={i}
-            to={ADMIN_URL}
+            to={adminRecordUrl(task._record_id)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-4 px-5 py-3 border-b border-border last:border-b-0 hover:bg-[hsl(24_100%_97%)] transition-colors group cursor-pointer"
@@ -160,7 +162,7 @@ export default function TasksSection() {
         {sortedTasks.map((task, i) => (
           <UniversalLink
             key={i}
-            to={ADMIN_URL}
+            to={adminRecordUrl(task._record_id)}
             target="_blank"
             rel="noopener noreferrer"
             className="block bg-card rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow"

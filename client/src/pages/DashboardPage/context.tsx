@@ -16,6 +16,7 @@ export interface IDashboardData {
     updated_at: string;
   };
   business: Array<{
+    _record_id?: string;
     '业务线': string;
     '报价/利润逻辑': string;
     '下一步动作': string;
@@ -28,6 +29,7 @@ export interface IDashboardData {
     '商业模式': string;
   }>;
   opportunities: Array<{
+    _record_id?: string;
     '当前阶段': string;
     '来源人': string;
     '关键风险': string;
@@ -43,6 +45,7 @@ export interface IDashboardData {
     '资料链接'?: string;
   }>;
   tasks: Array<{
+    _record_id?: string;
     '状态': string;
     '截止时间': string;
     '产出物': string;
@@ -53,6 +56,7 @@ export interface IDashboardData {
     '备注': string;
   }>;
   materials: Array<{
+    _record_id?: string;
     '负责人': string;
     '版本日期': string;
     '备注': string;
@@ -65,6 +69,7 @@ export interface IDashboardData {
     '行动项'?: string;
   }>;
   meetings?: Array<{
+    _record_id?: string;
     '会议标题': string;
     '品牌方': string;
     '会议日期': string;
@@ -79,6 +84,7 @@ export interface IDashboardData {
     '下一步建议': string;
     '原文摘录': string;
     '文件路径': string;
+    '文件URL'?: string;
   }>;
   dashboard: Array<{
     '排序': number;

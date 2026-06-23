@@ -151,24 +151,46 @@ export function toApiUrl(pathOrUrl: unknown): string {
 
 export async function uploadAdminFile(
   tableKey: string,
-  formData: FormData
+  formData: FormData,
+  onProgress?: (percent: number) => void
 ): Promise<{
   record: Record<string, unknown>;
   analysis: Record<string, unknown>;
   created_tasks: Array<Record<string, unknown>>;
 }> {
-  const response = await fetch(`${API_BASE}/api/admin/${tableKey}/upload`, {
-    method: 'POST',
-    body: formData,
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API_BASE}/api/admin/${tableKey}/upload`);
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) return;
+      onProgress?.(Math.round((event.loaded / event.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        onProgress?.(100);
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        reject(new Error(`文件上传失败：${xhr.status}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('文件上传失败'));
+    xhr.send(formData);
   });
+}
 
-  if (!response.ok) {
-    throw new Error(`文件上传失败：${response.status}`);
-  }
-
-  return (await response.json()) as {
+export async function summarizeAdminRecord(
+  tableKey: string,
+  recordId: string
+): Promise<{
+  record: Record<string, unknown>;
+  analysis: Record<string, unknown>;
+  created_tasks: Array<Record<string, unknown>>;
+}> {
+  return requestJson<{
     record: Record<string, unknown>;
     analysis: Record<string, unknown>;
     created_tasks: Array<Record<string, unknown>>;
-  };
+  }>(`/api/admin/${tableKey}/${recordId}/summarize`, {
+    method: 'POST',
+  });
 }
