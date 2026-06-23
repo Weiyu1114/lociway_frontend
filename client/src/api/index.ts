@@ -6,7 +6,7 @@ const DEFAULT_API_BASE = 'https://lociway-backend.onrender.com';
 const API_BASE =
   import.meta.env.VITE_LOCIWAY_API_BASE?.replace(/\/$/, '') ?? DEFAULT_API_BASE;
 const ADMIN_URL =
-  typeof window === 'undefined' ? '/admin' : `${window.location.origin}/admin`;
+  typeof window === 'undefined' ? '/#/admin' : `${window.location.origin}/#/admin`;
 
 async function requestData<T>(path: string): Promise<T[]> {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -137,6 +137,37 @@ export async function uploadMeetingFile(formData: FormData): Promise<{
 
   return (await response.json()) as {
     meeting: Record<string, unknown>;
+    analysis: Record<string, unknown>;
+    created_tasks: Array<Record<string, unknown>>;
+  };
+}
+
+export function toApiUrl(pathOrUrl: unknown): string {
+  const value = String(pathOrUrl ?? '');
+  if (!value) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) return value;
+  return `${API_BASE}${value.startsWith('/') ? value : `/${value}`}`;
+}
+
+export async function uploadAdminFile(
+  tableKey: string,
+  formData: FormData
+): Promise<{
+  record: Record<string, unknown>;
+  analysis: Record<string, unknown>;
+  created_tasks: Array<Record<string, unknown>>;
+}> {
+  const response = await fetch(`${API_BASE}/api/admin/${tableKey}/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`文件上传失败：${response.status}`);
+  }
+
+  return (await response.json()) as {
+    record: Record<string, unknown>;
     analysis: Record<string, unknown>;
     created_tasks: Array<Record<string, unknown>>;
   };

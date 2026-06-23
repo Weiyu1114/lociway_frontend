@@ -21,20 +21,20 @@ function DashboardContent() {
 
   return (
     <div className="w-full min-h-full bg-background">
-      {/* Full-width header with negative margins to break out of content padding */}
-      <div className="w-full -mx-4 md:-mx-10 lg:-mx-16">
+      {/* Full-width header */}
+      <div className="w-full">
         <HeaderSection />
       </div>
 
-      {/* Constrained content area */}
-      <div className="max-w-7xl mx-auto px-4 md:px-10 lg:px-16 pt-5 pb-8 space-y-7">
+      {/* Full-width content area */}
+      <div className="w-full px-5 md:px-8 lg:px-10 pt-6 pb-8 space-y-7">
         <KpiCardsSection />
         <PhaseFocusSection />
         <BusinessLinesSection />
         <OpportunitiesSection />
-        <MeetingSummariesSection />
         <TasksSection />
         <FooterSection />
+        <MeetingSummariesSection />
       </div>
     </div>
   );

@@ -4,13 +4,13 @@ import {
   FolderIcon,
   MessageSquareIcon,
   DatabaseIcon,
-  LightbulbIcon,
   ExternalLinkIcon,
   ArrowUpRightIcon,
 } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
+import { toApiUrl } from '@/api';
 
-const ADMIN_URL = '/admin';
+const ADMIN_URL = '/#/admin';
 
 const QUICK_LINKS = [
   {
@@ -34,8 +34,6 @@ const QUICK_LINKS = [
     icon: DatabaseIcon,
   },
 ];
-
-const MATERIALS_URL = ADMIN_URL;
 
 function getTypeStyle(type: string) {
   switch (type) {
@@ -90,27 +88,6 @@ function getTypeIcon(type: string) {
   }
 }
 
-const AI_INSIGHTS = [
-  {
-    title: '任务负载集中度',
-    icon: '⚡',
-    data: 'Louis 承担了 3/4 的 P0 任务（3 条中 2 条主负责 + 1 条协同）',
-    suggestion: '建议关注任务分配均衡性，避免单人瓶颈',
-  },
-  {
-    title: '管线成熟度风险',
-    icon: '🎯',
-    data: '2 个机会中仅 1 个有明确金额（6.8 万），另一个金额待定且成交概率低-中',
-    suggestion: '建议加速 Lucas refurb 资源的初步验证，同时扩大机会池',
-  },
-  {
-    title: '业务线进展梯度',
-    icon: '📊',
-    data: '品牌 CMO 已进入"产品化中"，而小 b 分销仍在"探索"、二手翻新在"初聊"',
-    suggestion: '建议以品牌 CMO 为标杆，将产品化经验复用到其他业务线',
-  },
-];
-
 function MaterialsSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -123,24 +100,6 @@ function MaterialsSkeleton() {
           <div className="h-4 w-full bg-accent rounded animate-pulse mb-2" />
           <div className="h-3 w-3/4 bg-accent rounded animate-pulse mb-2" />
           <div className="h-3 w-1/2 bg-accent rounded animate-pulse" />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function InsightsSkeleton() {
-  return (
-    <div className="bg-card rounded-xl shadow-sm border-l-[3px] border-primary p-5">
-      <div className="h-5 w-32 bg-accent rounded animate-pulse mb-4" />
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className={`py-3 ${i < 2 ? 'border-b border-border' : ''}`}
-        >
-          <div className="h-4 w-28 bg-accent rounded animate-pulse mb-2" />
-          <div className="h-3 w-full bg-accent rounded animate-pulse mb-1.5" />
-          <div className="h-3 w-4/5 bg-accent rounded animate-pulse" />
         </div>
       ))}
     </div>
@@ -167,11 +126,12 @@ export default function FooterSection() {
               const typeStyle = getTypeStyle(mat['类型'] ?? '');
               const Icon = getTypeIcon(mat['类型'] ?? '');
               const bizColor = getBizLineColor(mat['对应业务线'] ?? '');
+              const materialUrl = mat['文件URL'] ? toApiUrl(mat['文件URL']) : ADMIN_URL;
 
               return (
                 <UniversalLink
                   key={idx}
-                  to={MATERIALS_URL}
+                  to={materialUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group block bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-200 p-4 cursor-pointer"
@@ -205,49 +165,12 @@ export default function FooterSection() {
                   </div>
 
                   <div className="mt-3 flex items-center text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <span>进入数据后台</span>
+                    <span>{mat['文件URL'] ? '预览资料' : '进入数据后台'}</span>
                     <ExternalLinkIcon className="w-3 h-3 ml-1" />
                   </div>
                 </UniversalLink>
               );
             })}
-          </div>
-        )}
-      </section>
-
-      {/* AI 洞察 */}
-      <section className="w-full">
-        {loading || !data ? (
-          <InsightsSkeleton />
-        ) : (
-          <div className="bg-card rounded-xl shadow-sm border-l-[3px] border-primary p-4">
-            <div className="flex items-center gap-2 mb-4">
-              <LightbulbIcon className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-bold text-foreground">AI 洞察</h2>
-            </div>
-            {AI_INSIGHTS.map((insight, idx) => (
-              <div
-                key={idx}
-                className={`py-3 ${idx < AI_INSIGHTS.length - 1 ? 'border-b border-border' : ''}`}
-              >
-                <div className="flex items-start gap-2.5">
-                  <span className="text-base leading-6 shrink-0">
-                    {insight.icon}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-foreground mb-1">
-                      {insight.title}
-                    </h3>
-                    <p className="text-sm text-foreground leading-relaxed mb-1">
-                      {insight.data}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {insight.suggestion}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         )}
       </section>

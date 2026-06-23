@@ -27,7 +27,7 @@ export default function HeaderSection() {
   if (!data && loading) {
     return (
       <header className="w-full bg-gradient-to-r from-[hsl(228_28%_27%)] to-[hsl(228_28%_32%)]">
-        <div className="relative max-w-7xl mx-auto px-4 md:px-10 lg:px-16 py-3 flex items-center justify-between">
+        <div className="relative w-full px-5 md:px-8 lg:px-10 py-6 flex items-center justify-between">
           <div className="flex-1 min-w-0 space-y-2">
             <div className="h-5 w-36 rounded-md bg-white/10 animate-pulse" />
             <div className="h-3 w-64 rounded-md bg-white/10 animate-pulse" />
@@ -44,13 +44,13 @@ export default function HeaderSection() {
 
   return (
     <header className="w-full bg-gradient-to-r from-[hsl(228_28%_27%)] to-[hsl(228_28%_32%)]">
-      <div className="relative max-w-7xl mx-auto px-4 md:px-10 lg:px-16 py-3 flex items-center justify-between gap-4">
+      <div className="relative w-full px-5 md:px-8 lg:px-10 py-6 flex items-center justify-between gap-5">
         {/* Left: Brand + Description */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-base font-bold text-white tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
             {intro?.['标题'] ?? 'LociWay 乐沩'}
           </h1>
-          <p className="text-xs font-light text-white/50 mt-0.5 truncate">
+          <p className="text-sm font-light text-white/65 mt-1 truncate">
             {intro?.['内容'] ?? '用小核心团队连接外部增长资源网络，帮助出海品牌先判断、再验证、后放大。'}
           </p>
         </div>

@@ -60,6 +60,9 @@ export interface IDashboardData {
     '类型': string;
     '资料名称': string;
     '对应业务线': string;
+    '文件URL'?: string;
+    'AI总结'?: string;
+    '行动项'?: string;
   }>;
   meetings?: Array<{
     '会议标题': string;
