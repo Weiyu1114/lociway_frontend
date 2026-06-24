@@ -5,9 +5,10 @@ import {
   CheckIcon,
   PlusIcon,
   SaveIcon,
+  Trash2Icon,
   XIcon,
 } from 'lucide-react';
-import { createAdminRecord, updateAdminRecord } from '@/api';
+import { createAdminRecord, deleteAdminRecord, updateAdminRecord } from '@/api';
 import { useDashboard } from './context';
 
 type Task = NonNullable<ReturnType<typeof useDashboard>['data']['tasks']>[number];
@@ -91,7 +92,9 @@ function Skeleton() {
 export default function TasksSection() {
   const { data, loading, refresh } = useDashboard();
   const [editorTask, setEditorTask] = useState<Task | null>(null);
+  const [pendingDeleteTask, setPendingDeleteTask] = useState<Task | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const sortedTasks = useMemo(() => {
     return [...(data?.tasks ?? [])].sort((a, b) => {
@@ -151,6 +154,22 @@ export default function TasksSection() {
     });
   }
 
+  async function confirmDelete() {
+    if (!pendingDeleteTask?._record_id) return;
+
+    setDeletingId(pendingDeleteTask._record_id);
+    try {
+      await deleteAdminRecord('tasks', pendingDeleteTask._record_id);
+      await refresh();
+      if (editorTask?._record_id === pendingDeleteTask._record_id) {
+        setEditorTask(null);
+      }
+      setPendingDeleteTask(null);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (loading) return <Skeleton />;
   if (!data?.tasks?.length && !editorTask) {
     return (
@@ -203,47 +222,65 @@ export default function TasksSection() {
 
             <div className="space-y-3">
               {(grouped[owner] ?? []).map((task, index) => (
-                <button
+                <article
                   key={`${task._record_id ?? task['任务']}-${index}`}
-                  onClick={() => setEditorTask({ ...task })}
-                  className="group block w-full rounded-lg border border-border bg-background p-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:bg-[hsl(24_100%_97%)] hover:shadow-sm"
+                  className="group rounded-lg border border-border bg-background p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[hsl(24_100%_97%)] hover:shadow-sm"
                 >
-                  <div className="mb-2 flex items-start justify-between gap-2">
-                    <p className="min-w-0 text-sm font-semibold leading-snug text-foreground group-hover:text-[hsl(25_95%_45%)]">
-                      {task['任务']}
+                  <button
+                    type="button"
+                    onClick={() => setEditorTask({ ...task })}
+                    className="block w-full text-left"
+                  >
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <p className="min-w-0 text-sm font-semibold leading-snug text-foreground group-hover:text-[hsl(25_95%_45%)]">
+                        {task['任务']}
+                      </p>
+                      {task['状态'] === '已完成' && (
+                        <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[hsl(152_69%_32%)]" />
+                      )}
+                    </div>
+
+                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getPriorityStyle(task['优先级'])}`}>
+                        {task['优先级']}
+                      </span>
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getStatusStyle(task['状态'])}`}>
+                        {task['状态']}
+                      </span>
+                    </div>
+
+                    <p className="mb-2 truncate text-xs text-muted-foreground">
+                      {task['所属项目'] || '未绑定项目'}
                     </p>
-                    {task['状态'] === '已完成' && (
-                      <CheckIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[hsl(152_69%_32%)]" />
+
+                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <CalendarIcon className="h-3.5 w-3.5" />
+                        {formatDeadline(task['截止时间'])}
+                      </span>
+                      {task['产出物'] && <span className="truncate">{task['产出物']}</span>}
+                    </div>
+
+                    {task['备注'] && (
+                      <p className="mt-2 border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
+                        {task['备注']}
+                      </p>
                     )}
-                  </div>
-
-                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getPriorityStyle(task['优先级'])}`}>
-                      {task['优先级']}
-                    </span>
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getStatusStyle(task['状态'])}`}>
-                      {task['状态']}
-                    </span>
-                  </div>
-
-                  <p className="mb-2 truncate text-xs text-muted-foreground">
-                    {task['所属项目'] || '未绑定项目'}
-                  </p>
-
-                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      {formatDeadline(task['截止时间'])}
-                    </span>
-                    {task['产出物'] && <span className="truncate">{task['产出物']}</span>}
-                  </div>
-
-                  {task['备注'] && (
-                    <p className="mt-2 border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
-                      {task['备注']}
-                    </p>
+                  </button>
+                  {task._record_id && (
+                    <div className="mt-3 flex justify-end border-t border-border pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteTask(task)}
+                        disabled={deletingId === task._record_id}
+                        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-[hsl(0_84%_96%)] hover:text-[hsl(0_72%_45%)] disabled:opacity-50"
+                      >
+                        <Trash2Icon className="h-3.5 w-3.5" />
+                        {deletingId === task._record_id ? '删除中' : '删除'}
+                      </button>
+                    </div>
                   )}
-                </button>
+                </article>
               ))}
             </div>
           </section>
@@ -393,6 +430,47 @@ export default function TasksSection() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {pendingDeleteTask && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/35 p-4">
+          <div className="w-full max-w-md rounded-lg bg-card p-5 shadow-xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-extrabold text-foreground">删除任务</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                  确定删除「{pendingDeleteTask['任务']}」吗？删除后前端看板和后端任务表都会同步移除。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPendingDeleteTask(null)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"
+                aria-label="关闭"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingDeleteTask(null)}
+                className="rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-accent"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deletingId === pendingDeleteTask._record_id}
+                className="inline-flex items-center gap-2 rounded-md bg-[hsl(0_72%_45%)] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[hsl(0_72%_40%)] disabled:opacity-60"
+              >
+                <Trash2Icon className="h-4 w-4" />
+                {deletingId === pendingDeleteTask._record_id ? '删除中' : '确认删除'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </section>

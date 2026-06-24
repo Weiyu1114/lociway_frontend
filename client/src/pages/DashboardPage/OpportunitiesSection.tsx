@@ -36,10 +36,10 @@ interface ISummary {
   project?: string;
   generated_at?: string;
   summary?: string;
-  key_points?: string[];
-  action_items?: string[];
-  risks?: string[];
-  next_steps?: string[];
+  key_points?: unknown;
+  action_items?: unknown;
+  risks?: unknown;
+  next_steps?: unknown;
   confidence?: string;
 }
 
@@ -129,8 +129,25 @@ function fileKind(type: string, name: string) {
   return '文件';
 }
 
-function summaryItems(value?: string[]) {
-  return Array.isArray(value) ? value.filter(Boolean) : [];
+function formatSummaryItem(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'object') {
+    const item = value as Record<string, unknown>;
+    const owner = item.owner ? `${item.owner}：` : '';
+    const task = item.task ?? item.content ?? item.title ?? item.summary ?? '';
+    const due = item.due_date ? `（${item.due_date}）` : '';
+    if (task) return `${owner}${task}${due}`;
+    return JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function summaryItems(value?: unknown): string[] {
+  if (Array.isArray(value)) return value.map(formatSummaryItem).filter(Boolean);
+  const formatted = formatSummaryItem(value);
+  return formatted ? [formatted] : [];
 }
 
 function buildFiles(project: Project, materials: Material[]): IProjectFile[] {
