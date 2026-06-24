@@ -4,8 +4,8 @@ import {
   deleteAdminRecord,
   fetchAdminRecords,
   fetchAdminSchema,
+  reorderAdminRecords,
   summarizeAdminAttachment,
-  summarizeAdminRecord,
   toApiUrl,
   uploadAdminFile,
   updateAdminRecord,
@@ -20,6 +20,7 @@ import {
   PencilIcon,
   PlusIcon,
   RefreshCwIcon,
+  GripVerticalIcon,
   SaveIcon,
   Trash2Icon,
   XIcon,
@@ -147,6 +148,18 @@ function fileKind(name = '', type = '') {
   return { label: 'File', tone: 'text-muted-foreground bg-muted' };
 }
 
+function isDateField(field: string) {
+  return field.includes('日期') || field.includes('时间') || field.includes('截止');
+}
+
+function isPeopleField(field: string) {
+  return field.includes('负责人') || field.includes('参会人') || field.includes('来源人');
+}
+
+function isBrandField(field: string) {
+  return field.includes('品牌方') || field.includes('客户名称') || field.includes('客户/合作方');
+}
+
 export default function AdminPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -161,10 +174,10 @@ export default function AdminPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [summarizing, setSummarizing] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [draggingId, setDraggingId] = useState('');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -335,29 +348,17 @@ export default function AdminPage() {
     }
   }
 
-  async function summarizeRecord() {
-    if (!selectedId) return;
-    setSummarizing(true);
-    try {
-      const result = await summarizeAdminRecord(tableKey, selectedId);
-      toast.success('AI 总结已生成', {
-        description: `自动创建 ${result.created_tasks.length} 个行动任务`,
-      });
-      await loadRecords(tableKey, selectedId);
-      await loadAllRecords(Object.keys(schema));
-    } catch {
-      toast.error('AI 总结失败，请确认已上传可解析的文档');
-    } finally {
-      setSummarizing(false);
-    }
-  }
-
   async function summarizeAttachment(attachment: Attachment) {
     if (!selectedId || !attachment.id) return;
     setSummarizingAttachmentId(attachment.id);
     try {
       const result = await summarizeAdminAttachment(tableKey, selectedId, attachment.id);
-      toast.success('附件 AI 总结已生成');
+      const createdCount = Array.isArray((result as { created_tasks?: unknown[] }).created_tasks)
+        ? (result as { created_tasks?: unknown[] }).created_tasks?.length ?? 0
+        : 0;
+      toast.success('附件 AI 总结已生成', {
+        description: createdCount > 0 ? `已自动生成 ${createdCount} 条个人任务` : '未识别到明确行动项',
+      });
       await loadRecords(tableKey, selectedId);
       await loadAllRecords(Object.keys(schema));
       setSummaryAttachment(result.attachment as Attachment);
@@ -366,6 +367,26 @@ export default function AdminPage() {
       toast.error('附件 AI 总结失败，请确认文件可解析');
     } finally {
       setSummarizingAttachmentId('');
+    }
+  }
+
+  async function reorderRecords(targetId: string) {
+    if (!draggingId || draggingId === targetId) return;
+    const current = records.map((record) => stringifyValue(record._record_id));
+    const fromIndex = current.indexOf(draggingId);
+    const toIndex = current.indexOf(targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+    const nextRecords = [...records];
+    const [moved] = nextRecords.splice(fromIndex, 1);
+    nextRecords.splice(toIndex, 0, moved);
+    setRecords(nextRecords.map((record, index) => ({ ...record, 排序: index + 1 })));
+    try {
+      await reorderAdminRecords(tableKey, nextRecords.map((record) => stringifyValue(record._record_id)));
+      await loadAllRecords(Object.keys(schema));
+      toast.success('排序已保存');
+    } catch {
+      toast.error('排序保存失败');
+      await loadRecords(tableKey, selectedId);
     }
   }
 
@@ -394,6 +415,16 @@ export default function AdminPage() {
       }))
       .filter((group) => group.items.length > 0);
   }, [allRecords, selectedId, selectedRecord, tableKey]);
+  const brandOptions = useMemo(() => {
+    const values = new Set<string>();
+    Object.values(allRecords).flat().forEach((record) => {
+      ['品牌方', '客户名称', '客户/合作方'].forEach((field) => {
+        const value = stringifyValue(record[field]).trim();
+        if (value) values.add(value);
+      });
+    });
+    return Array.from(values).sort();
+  }, [allRecords]);
 
   return (
     <div className="min-h-screen bg-[hsl(210_28%_96%)] text-foreground">
@@ -472,6 +503,11 @@ export default function AdminPage() {
                     return (
                       <button
                         key={id}
+                        draggable
+                        onDragStart={() => setDraggingId(id)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={() => reorderRecords(id)}
+                        onDragEnd={() => setDraggingId('')}
                         onClick={() => {
                           setSelectedId(id);
                           setUploadOpen(false);
@@ -480,13 +516,16 @@ export default function AdminPage() {
                           setUploadProgress(0);
                           navigate(adminPath(tableKey, id));
                         }}
-                        className={`block w-full border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-accent ${
+                        className={`flex w-full items-center gap-2 border-b border-border px-4 py-3 text-left last:border-b-0 hover:bg-accent ${
                           selectedId === id ? 'bg-[hsl(24_100%_97%)]' : ''
                         }`}
                       >
-                        <div className="truncate text-sm font-semibold">{title}</div>
-                        <div className="mt-1 truncate text-xs text-muted-foreground">
-                          {subtitle}
+                        <GripVerticalIcon className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-semibold">{title}</div>
+                          <div className="mt-1 truncate text-xs text-muted-foreground">
+                            {subtitle}
+                          </div>
                         </div>
                       </button>
                     );
@@ -513,14 +552,6 @@ export default function AdminPage() {
                     >
                       <PlusIcon className="h-3.5 w-3.5" />
                       上传文档
-                    </button>
-                    <button
-                      onClick={summarizeRecord}
-                      disabled={summarizing}
-                      className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <BotIcon className="h-3.5 w-3.5" />
-                      {summarizing ? '总结中' : 'AI 总结'}
                     </button>
                   </>
                 )}
@@ -881,11 +912,11 @@ export default function AdminPage() {
               {fields.map((field) => {
                 const isLong = LONG_FIELDS.has(field);
                 return (
-                  <label key={field} className={isLong ? 'md:col-span-2' : ''}>
+                  <div key={field} className={isLong ? 'md:col-span-2' : ''}>
                     <span className="mb-1 block text-xs font-medium text-muted-foreground">
                       {field}
                     </span>
-                    {tableKey === 'tasks' && field === '负责人' ? (
+                    {isPeopleField(field) ? (
                       <div className="flex min-h-10 flex-wrap items-center gap-3 rounded-md border border-border bg-background px-3 py-2">
                         {TASK_OWNERS.map((owner) => {
                           const selected = (form[field] ?? '').split(/[、/,，\s]+/).includes(owner);
@@ -909,6 +940,31 @@ export default function AdminPage() {
                           );
                         })}
                       </div>
+                    ) : isDateField(field) ? (
+                      <input
+                        type="date"
+                        value={(form[field] ?? '').slice(0, 10)}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, [field]: event.target.value }))
+                        }
+                        className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      />
+                    ) : isBrandField(field) ? (
+                      <>
+                        <input
+                          list={`brand-options-${field}`}
+                          value={form[field] ?? ''}
+                          onChange={(event) =>
+                            setForm((current) => ({ ...current, [field]: event.target.value }))
+                          }
+                          className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                        />
+                        <datalist id={`brand-options-${field}`}>
+                          {brandOptions.map((option) => (
+                            <option key={option} value={option} />
+                          ))}
+                        </datalist>
+                      </>
                     ) : fieldOptions(tableKey, field) ? (
                       <select
                         value={form[field] ?? ''}
@@ -941,7 +997,7 @@ export default function AdminPage() {
                         className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
                       />
                     )}
-                  </label>
+                  </div>
                 );
               })}
             </div>

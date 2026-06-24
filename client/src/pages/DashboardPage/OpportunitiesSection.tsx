@@ -1,18 +1,14 @@
-import { ExternalLinkIcon, FolderIcon, FileTextIcon } from 'lucide-react';
-import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
+import { useMemo, useState } from 'react';
+import { CheckSquareIcon, FileTextIcon, FolderIcon, XIcon } from 'lucide-react';
 import { useDashboard } from './context';
 
-function adminRecordUrl(id?: string) {
-  return id
-    ? `/#/admin?table=opportunities&id=${encodeURIComponent(id)}`
-    : '/#/admin?table=opportunities';
-}
+type Project = NonNullable<ReturnType<typeof useDashboard>['data']['opportunities']>[number];
 
-function getCustomerName(opp: Record<string, string | undefined>) {
+function getCustomerName(opp: Project) {
   return opp['客户名称'] || opp['客户/合作方'] || '未归档客户';
 }
 
-function getProjectName(opp: Record<string, string | undefined>) {
+function getProjectName(opp: Project) {
   return opp['项目名称'] || opp['机会名称'] || '未命名项目';
 }
 
@@ -20,6 +16,10 @@ function getStatusStyle(status: string) {
   if (status === '重点跟进') return 'bg-[hsl(0_84%_96%)] text-[hsl(0_72%_45%)]';
   if (status === '进行中') return 'bg-[hsl(217_91%_96%)] text-[hsl(217_91%_40%)]';
   return 'bg-[hsl(220_14%_95%)] text-[hsl(229_16%_47%)]';
+}
+
+function textIncludes(source: string | undefined, target: string) {
+  return (source ?? '').includes(target) || target.includes(source ?? '__never__');
 }
 
 function Skeleton() {
@@ -42,6 +42,23 @@ function Skeleton() {
 
 export default function OpportunitiesSection() {
   const { data, loading } = useDashboard();
+  const [activeProject, setActiveProject] = useState<Project | null>(null);
+
+  const projectDetail = useMemo(() => {
+    if (!activeProject) return null;
+    const projectName = getProjectName(activeProject);
+    const customer = getCustomerName(activeProject);
+    const files = (data.materials ?? []).filter((item) =>
+      textIncludes(item['所属项目'], projectName) ||
+      textIncludes(item['客户名称'], customer) ||
+      textIncludes(item['资料名称'], projectName)
+    );
+    const tasks = (data.tasks ?? []).filter((task) =>
+      textIncludes(task['所属项目'], projectName) ||
+      textIncludes(task['备注'], customer)
+    );
+    return { projectName, customer, files, tasks };
+  }, [activeProject, data.materials, data.tasks]);
 
   if (loading || !data) return <Skeleton />;
 
@@ -85,12 +102,10 @@ export default function OpportunitiesSection() {
 
             <div className="space-y-3">
               {projects.map((opp, index) => (
-                <UniversalLink
+                <button
                   key={opp._record_id ?? `${customer}-${index}`}
-                  to={adminRecordUrl(opp._record_id)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block rounded-lg border border-border bg-background p-4 transition-colors hover:bg-[hsl(24_100%_97%)]"
+                  onClick={() => setActiveProject(opp)}
+                  className="group block w-full rounded-lg border border-border bg-background p-4 text-left transition-colors hover:bg-[hsl(24_100%_97%)]"
                 >
                   <div className="mb-2 flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-2">
@@ -100,11 +115,10 @@ export default function OpportunitiesSection() {
                           {getProjectName(opp)}
                         </p>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {opp['文件夹'] || '资料 / 作战稿件 / 会议纪要'}
+                          {opp['文件夹'] || '资料 / 作战稿件 / 待办'}
                         </p>
                       </div>
                     </div>
-                    <ExternalLinkIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-80" />
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -118,12 +132,79 @@ export default function OpportunitiesSection() {
                       {opp['负责人'] ?? '负责人待定'}
                     </span>
                   </div>
-                </UniversalLink>
+                </button>
               ))}
             </div>
           </section>
         ))}
       </div>
+
+      {activeProject && projectDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
+          <div className="flex max-h-[88vh] w-full max-w-4xl flex-col rounded-lg bg-card shadow-xl">
+            <div className="flex items-start justify-between gap-3 border-b border-border px-6 py-5">
+              <div>
+                <h3 className="text-2xl font-extrabold text-foreground">
+                  {projectDetail.projectName}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {projectDetail.customer} · {activeProject['当前阶段'] || '阶段待定'}
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveProject(null)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-auto p-6 lg:grid-cols-2">
+              <section className="rounded-lg border border-border bg-background p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <FileTextIcon className="h-4 w-4 text-primary" />
+                  <h4 className="font-bold">项目文件</h4>
+                </div>
+                {projectDetail.files.length > 0 ? (
+                  <div className="space-y-2">
+                    {projectDetail.files.map((file) => (
+                      <div key={file._record_id ?? file['资料名称']} className="rounded-md border border-border bg-card p-3">
+                        <p className="text-sm font-semibold">{file['资料名称']}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {file['类型'] || '资料'} · {file['负责人'] || '负责人待定'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">暂无关联文件</p>
+                )}
+              </section>
+
+              <section className="rounded-lg border border-border bg-background p-4">
+                <div className="mb-3 flex items-center gap-2">
+                  <CheckSquareIcon className="h-4 w-4 text-primary" />
+                  <h4 className="font-bold">项目待办</h4>
+                </div>
+                {projectDetail.tasks.length > 0 ? (
+                  <div className="space-y-2">
+                    {projectDetail.tasks.map((task) => (
+                      <div key={task._record_id ?? task['任务']} className="rounded-md border border-border bg-card p-3">
+                        <p className="text-sm font-semibold">{task['任务']}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {task['负责人'] || '未分配'} · {task['状态'] || '待开始'} · {task['截止时间'] || '日期待定'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">暂无关联待办</p>
+                )}
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

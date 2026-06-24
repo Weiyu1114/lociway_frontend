@@ -68,6 +68,8 @@ export interface IDashboardData {
     '用途': string;
     '类型': string;
     '资料名称': string;
+    '所属项目'?: string;
+    '客户名称'?: string;
     '对应业务线': string;
     '文件URL'?: string;
     '附件列表'?: string;

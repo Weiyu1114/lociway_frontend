@@ -1,10 +1,4 @@
 import { useDashboard } from './context';
-import { ExternalLinkIcon } from 'lucide-react';
-import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
-
-function adminRecordUrl(id?: string) {
-  return id ? `/#/admin?table=dashboard&id=${encodeURIComponent(id)}` : '/#/admin?table=dashboard';
-}
 
 function PhaseFocusSkeleton() {
   return (
@@ -60,15 +54,6 @@ export default function PhaseFocusSection() {
             <p className="text-base leading-relaxed text-foreground">
               {currentPhase['内容']}
             </p>
-            <UniversalLink
-              to={adminRecordUrl(currentPhase._record_id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-            >
-              后台编辑
-              <ExternalLinkIcon className="h-3 w-3" />
-            </UniversalLink>
           </div>
         )}
 
@@ -93,15 +78,6 @@ export default function PhaseFocusSection() {
                 </li>
               ))}
             </ul>
-            <UniversalLink
-              to={adminRecordUrl(weeklyFocus._record_id)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-            >
-              后台编辑
-              <ExternalLinkIcon className="h-3 w-3" />
-            </UniversalLink>
           </div>
         )}
       </div>

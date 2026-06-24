@@ -1,56 +1,28 @@
-import { useDashboard } from './context';
+import { useState } from 'react';
 import {
+  DatabaseIcon,
   FileTextIcon,
   FolderIcon,
   MessageSquareIcon,
-  DatabaseIcon,
-  ExternalLinkIcon,
+  XIcon,
 } from 'lucide-react';
-import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
+import { useDashboard } from './context';
 
-const adminRecordUrl = (table: string, id?: string) => {
-  const origin = typeof window === 'undefined' ? '' : window.location.origin;
-  return `${origin}/#/admin?table=${table}${id ? `&id=${encodeURIComponent(id)}` : ''}`;
-};
+type Material = ReturnType<typeof useDashboard>['data']['materials'][number];
 
 function getTypeStyle(type: string) {
   switch (type) {
     case '产品文档':
-      return {
-        bg: 'bg-[hsl(217_91%_96%)]',
-        text: 'text-[hsl(217_91%_40%)]',
-      };
+      return 'bg-[hsl(217_91%_96%)] text-[hsl(217_91%_40%)]';
     case '运营模板':
-      return {
-        bg: 'bg-[hsl(152_69%_95%)]',
-        text: 'text-[hsl(152_69%_32%)]',
-      };
+      return 'bg-[hsl(152_69%_95%)] text-[hsl(152_69%_32%)]';
     case '沟通模板':
-      return {
-        bg: 'bg-[hsl(25_95%_96%)]',
-        text: 'text-[hsl(25_85%_42%)]',
-      };
+      return 'bg-[hsl(25_95%_96%)] text-[hsl(25_85%_42%)]';
     case '管理模板':
-      return {
-        bg: 'bg-[hsl(220_14%_95%)]',
-        text: 'text-[hsl(229_16%_47%)]',
-      };
+      return 'bg-[hsl(220_14%_95%)] text-[hsl(229_16%_47%)]';
     default:
-      return { bg: 'bg-muted', text: 'text-muted-foreground' };
+      return 'bg-muted text-muted-foreground';
   }
-}
-
-function getBizLineColor(line: string) {
-  if (line?.includes('品牌 CMO') || line?.includes('CMO')) {
-    return 'text-[hsl(217_91%_45%)]';
-  }
-  if (line?.includes('小 b') || line?.includes('分销')) {
-    return 'text-[hsl(152_69%_32%)]';
-  }
-  if (line?.includes('翻新') || line?.includes('二手')) {
-    return 'text-[hsl(25_85%_42%)]';
-  }
-  return 'text-muted-foreground';
 }
 
 function getTypeIcon(type: string) {
@@ -68,16 +40,12 @@ function getTypeIcon(type: string) {
 
 function MaterialsSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div
-          key={i}
-          className="bg-card rounded-xl shadow-sm p-5 transition-shadow"
-        >
-          <div className="h-5 w-20 bg-accent rounded-full animate-pulse mb-3" />
-          <div className="h-4 w-full bg-accent rounded animate-pulse mb-2" />
-          <div className="h-3 w-3/4 bg-accent rounded animate-pulse mb-2" />
-          <div className="h-3 w-1/2 bg-accent rounded animate-pulse" />
+        <div key={i} className="rounded-xl bg-card p-5 shadow-sm">
+          <div className="mb-3 h-5 w-20 animate-pulse rounded-full bg-accent" />
+          <div className="mb-2 h-4 w-full animate-pulse rounded bg-accent" />
+          <div className="h-3 w-3/4 animate-pulse rounded bg-accent" />
         </div>
       ))}
     </div>
@@ -86,12 +54,18 @@ function MaterialsSkeleton() {
 
 export default function FooterSection() {
   const { data, loading } = useDashboard();
+  const [activeMaterial, setActiveMaterial] = useState<Material | null>(null);
 
   const materials = data?.materials ?? [];
+  const grouped = materials.reduce<Record<string, Material[]>>((acc, item) => {
+    const type = item['类型'] || '其他资料';
+    acc[type] = acc[type] ?? [];
+    acc[type].push(item);
+    return acc;
+  }, {});
 
   return (
     <>
-      {/* 资料入口 */}
       <section className="w-full">
         <h2 className="mb-4 text-base font-extrabold tracking-wide text-foreground md:text-lg">
           资料入口
@@ -99,64 +73,96 @@ export default function FooterSection() {
         {loading || !data ? (
           <MaterialsSkeleton />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {materials.map((mat, idx) => {
-              const typeStyle = getTypeStyle(mat['类型'] ?? '');
-              const Icon = getTypeIcon(mat['类型'] ?? '');
-              const bizColor = getBizLineColor(mat['对应业务线'] ?? '');
-              const materialUrl = adminRecordUrl('resources', mat._record_id);
-
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-4">
+            {Object.entries(grouped).map(([type, items]) => {
+              const Icon = getTypeIcon(type);
               return (
-                <UniversalLink
-                  key={idx}
-                  to={materialUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group block bg-card rounded-xl shadow-sm hover:shadow-md transition-all duration-200 p-4 cursor-pointer"
+                <section
+                  key={type}
+                  className="rounded-xl bg-card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-md bg-muted flex items-center justify-center">
-                      <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+                  <div className="mb-4 flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${typeStyle.bg} ${typeStyle.text}`}
-                    >
-                      {mat['类型'] ?? '—'}
-                    </span>
+                    <div>
+                      <h3 className="text-base font-extrabold">{type}</h3>
+                      <p className="text-xs text-muted-foreground">{items.length} 份</p>
+                    </div>
                   </div>
 
-                  <h3 className="mb-2 text-base font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
-                    {mat['资料名称'] ?? '未命名资料'}
-                  </h3>
-
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                    {mat['用途'] ?? ''}
-                  </p>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className={`font-medium ${bizColor}`}>
-                      {mat['对应业务线'] ?? '—'}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {mat['负责人'] ?? ''}
-                    </span>
+                  <div className="space-y-2">
+                    {items.map((mat) => (
+                      <button
+                        key={mat._record_id ?? mat['资料名称']}
+                        onClick={() => setActiveMaterial(mat)}
+                        className="block w-full rounded-lg border border-border bg-background p-3 text-left transition-colors hover:bg-[hsl(24_100%_97%)]"
+                      >
+                        <p className="truncate text-sm font-semibold">{mat['资料名称']}</p>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                          {mat['所属项目'] || mat['对应业务线'] || '未归档'}
+                        </p>
+                      </button>
+                    ))}
                   </div>
-
-                  <div className="mt-3 flex items-center text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <span>进入资料详情</span>
-                    <ExternalLinkIcon className="w-3 h-3 ml-1" />
-                  </div>
-                </UniversalLink>
+                </section>
               );
             })}
           </div>
         )}
       </section>
 
-      {/* 底部说明 */}
-      <footer className="w-full text-center py-5">
+      {activeMaterial && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
+          <div className="w-full max-w-2xl rounded-lg bg-card shadow-xl">
+            <div className="flex items-start justify-between gap-3 border-b border-border px-6 py-5">
+              <div>
+                <span className={`mb-2 inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getTypeStyle(activeMaterial['类型'] ?? '')}`}>
+                  {activeMaterial['类型'] || '资料'}
+                </span>
+                <h3 className="text-2xl font-extrabold">{activeMaterial['资料名称']}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {activeMaterial['所属项目'] || activeMaterial['客户名称'] || activeMaterial['对应业务线'] || '未归档'}
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveMaterial(null)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
+              <section className="rounded-lg border border-border bg-background p-4 md:col-span-2">
+                <p className="mb-2 text-xs font-bold text-muted-foreground">用途</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {activeMaterial['用途'] || '暂无说明'}
+                </p>
+              </section>
+              <section className="rounded-lg border border-border bg-background p-4">
+                <p className="mb-2 text-xs font-bold text-muted-foreground">负责人</p>
+                <p className="text-sm">{activeMaterial['负责人'] || '未分配'}</p>
+              </section>
+              <section className="rounded-lg border border-border bg-background p-4">
+                <p className="mb-2 text-xs font-bold text-muted-foreground">版本日期</p>
+                <p className="text-sm">{activeMaterial['版本日期'] || '待定'}</p>
+              </section>
+              {activeMaterial['AI总结'] && (
+                <section className="rounded-lg border border-border bg-background p-4 md:col-span-2">
+                  <p className="mb-2 text-xs font-bold text-muted-foreground">AI 摘要</p>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                    {activeMaterial['AI总结']}
+                  </p>
+                </section>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <footer className="w-full py-5 text-center">
         <p className="text-xs text-muted-foreground">
-          数据来源于 LociWay 自建后台，点击刷新可获取最新数据。日常数据维护请在数据后台中操作。
+          数据来源于 LociWay 自建后台，点击刷新可获取最新数据。
         </p>
       </footer>
     </>

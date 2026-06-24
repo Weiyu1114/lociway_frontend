@@ -121,6 +121,16 @@ export async function deleteAdminRecord(
   });
 }
 
+export async function reorderAdminRecords(
+  tableKey: string,
+  recordIds: string[]
+): Promise<IAdminListResponse> {
+  return requestJson<IAdminListResponse>(`/api/admin/${tableKey}/reorder`, {
+    method: 'POST',
+    body: JSON.stringify({ record_ids: recordIds }),
+  });
+}
+
 export async function uploadMeetingFile(formData: FormData): Promise<{
   meeting: Record<string, unknown>;
   analysis: Record<string, unknown>;
