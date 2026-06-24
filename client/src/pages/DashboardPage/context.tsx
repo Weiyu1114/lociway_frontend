@@ -65,6 +65,7 @@ export interface IDashboardData {
     '资料名称': string;
     '对应业务线': string;
     '文件URL'?: string;
+    '附件列表'?: string;
     'AI总结'?: string;
     '行动项'?: string;
   }>;
@@ -87,6 +88,7 @@ export interface IDashboardData {
     '文件URL'?: string;
   }>;
   dashboard: Array<{
+    _record_id?: string;
     '排序': number;
     '标签': string;
     '模块类型': string;

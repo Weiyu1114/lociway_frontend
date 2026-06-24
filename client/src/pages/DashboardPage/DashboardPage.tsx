@@ -20,7 +20,7 @@ function DashboardContent() {
   }, [refresh]);
 
   return (
-    <div className="w-full min-h-full bg-background">
+    <div className="min-h-full w-full bg-background animate-[fadeIn_420ms_ease-out]">
       {/* Full-width header */}
       <div className="w-full">
         <HeaderSection />

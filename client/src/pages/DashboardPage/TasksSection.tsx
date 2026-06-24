@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { CalendarIcon, ExternalLinkIcon } from 'lucide-react';
+import { CalendarIcon, ExternalLinkIcon, PlusIcon } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 import { useDashboard } from './context';
 
@@ -102,6 +102,15 @@ export default function TasksSection() {
             {p0Count} 项 P0
           </span>
         )}
+        <UniversalLink
+          to="/#/admin?table=tasks"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto inline-flex items-center gap-1 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-accent"
+        >
+          <PlusIcon className="h-3.5 w-3.5" />
+          新增个人任务
+        </UniversalLink>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 2xl:grid-cols-4">
@@ -121,7 +130,7 @@ export default function TasksSection() {
                   to={adminRecordUrl(task._record_id)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group block rounded-lg border border-border bg-background p-3 transition-colors hover:bg-[hsl(24_100%_97%)]"
+                  className="group block rounded-lg border border-border bg-background p-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-[hsl(24_100%_97%)] hover:shadow-sm"
                 >
                   <div className="mb-2 flex items-start justify-between gap-2">
                     <p className="min-w-0 text-sm font-semibold leading-snug text-foreground group-hover:text-[hsl(25_95%_45%)]">

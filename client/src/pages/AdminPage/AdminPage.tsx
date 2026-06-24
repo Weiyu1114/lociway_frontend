@@ -13,6 +13,8 @@ import {
   ArrowLeftIcon,
   ExternalLinkIcon,
   BotIcon,
+  FileIcon,
+  FileTextIcon,
   FileUpIcon,
   PencilIcon,
   PlusIcon,
@@ -28,7 +30,7 @@ const TABLE_LABELS: Record<string, string> = {
   dashboard: '首页模块',
   business: '业务线',
   opportunities: '机会池',
-  tasks: '任务',
+  tasks: '个人任务',
   resources: '资料',
   meetings: '会议记录',
 };
@@ -65,7 +67,7 @@ function firstText(record: AdminRecord, fields: string[]): string {
 }
 
 function displayFields(fields: string[]) {
-  return fields.filter((field) => !['原文摘录'].includes(field));
+  return fields.filter((field) => !['原文摘录', '文件名', '文件类型', '文件URL', '附件列表'].includes(field));
 }
 
 function recordTerms(tableKey: string, record: AdminRecord) {
@@ -95,6 +97,45 @@ function canInlinePreview(fileUrl: string, fileType: string) {
   );
 }
 
+type Attachment = {
+  id?: string;
+  name?: string;
+  type?: string;
+  url?: string;
+  size?: number;
+  uploaded_at?: string;
+  excerpt?: string;
+};
+
+function parseAttachmentList(value: unknown): Attachment[] {
+  if (Array.isArray(value)) return value.filter((item): item is Attachment => typeof item === 'object' && item !== null);
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(String(value));
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is Attachment => typeof item === 'object' && item !== null)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function formatFileSize(size: unknown) {
+  const bytes = Number(size);
+  if (!Number.isFinite(bytes) || bytes <= 0) return '';
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function fileKind(name = '', type = '') {
+  const value = `${name} ${type}`.toLowerCase();
+  if (value.includes('.pdf') || value.includes('pdf')) return { label: 'PDF', tone: 'text-[hsl(0_72%_45%)] bg-[hsl(0_84%_96%)]' };
+  if (value.includes('.doc') || value.includes('docx')) return { label: 'Word', tone: 'text-[hsl(217_91%_45%)] bg-[hsl(217_91%_96%)]' };
+  if (value.includes('.md')) return { label: 'README', tone: 'text-[hsl(152_69%_32%)] bg-[hsl(152_69%_95%)]' };
+  if (value.includes('text') || value.includes('.txt') || value.includes('.csv')) return { label: 'Text', tone: 'text-[hsl(25_85%_42%)] bg-[hsl(25_95%_96%)]' };
+  return { label: 'File', tone: 'text-muted-foreground bg-muted' };
+}
+
 export default function AdminPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -110,10 +151,11 @@ export default function AdminPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [summarizing, setSummarizing] = useState(false);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
   const [allRecords, setAllRecords] = useState<Record<string, AdminRecord[]>>({});
 
   const fields = schema[tableKey] ?? [];
@@ -196,7 +238,7 @@ export default function AdminPage() {
 
   async function switchTable(nextTableKey: string) {
     setTableKey(nextTableKey);
-    setUploadFile(null);
+    setUploadFiles([]);
     setUploadProgress(0);
     setUploadOpen(false);
     navigate(adminPath(nextTableKey));
@@ -241,7 +283,7 @@ export default function AdminPage() {
   }
 
   async function uploadFileForTable() {
-    if (!uploadFile) {
+    if (uploadFiles.length === 0) {
       toast.error('请先选择文件');
       return;
     }
@@ -254,14 +296,21 @@ export default function AdminPage() {
     setUploadProgress(0);
     try {
       const payload = new FormData();
-      payload.append('file', uploadFile);
-      payload.append('record_id', selectedId);
-      payload.append('title', firstText(selectedRecord ?? {}, TITLE_FIELDS));
-      await uploadAdminFile(tableKey, payload, setUploadProgress);
+      for (const [index, file] of uploadFiles.entries()) {
+        payload.delete('file');
+        payload.delete('record_id');
+        payload.delete('title');
+        payload.append('file', file);
+        payload.append('record_id', selectedId);
+        payload.append('title', firstText(selectedRecord ?? {}, TITLE_FIELDS));
+        await uploadAdminFile(tableKey, payload, (percent) => {
+          setUploadProgress(Math.round(((index + percent / 100) / uploadFiles.length) * 100));
+        });
+      }
       toast.success('文件已上传', {
-        description: '需要 AI 总结时，可点击右侧的 AI 总结按钮',
+        description: `已保存 ${uploadFiles.length} 个附件，需要 AI 总结时再点击 AI 总结`,
       });
-      setUploadFile(null);
+      setUploadFiles([]);
       setUploadOpen(false);
       await loadRecords(tableKey, selectedId);
       await loadAllRecords(Object.keys(schema));
@@ -291,8 +340,13 @@ export default function AdminPage() {
 
   const recordTitle = selectedRecord ? firstText(selectedRecord, TITLE_FIELDS) : '请选择记录';
   const recordSubtitle = selectedRecord ? firstText(selectedRecord, SUBTITLE_FIELDS) : '';
-  const fileUrl = toApiUrl(selectedRecord?.['文件URL']);
-  const fileType = stringifyValue(selectedRecord?.['文件类型']);
+  const attachmentList = useMemo(
+    () => parseAttachmentList(selectedRecord?.['附件列表']),
+    [selectedRecord]
+  );
+  const latestAttachment = attachmentList.at(-1);
+  const fileUrl = toApiUrl(previewAttachment?.url || latestAttachment?.url || selectedRecord?.['文件URL']);
+  const fileType = stringifyValue(previewAttachment?.type || latestAttachment?.type || selectedRecord?.['文件类型']);
   const inlinePreview = canInlinePreview(fileUrl, fileType);
   const relatedGroups = useMemo(() => {
     if (!selectedRecord) return [];
@@ -390,7 +444,8 @@ export default function AdminPage() {
                         onClick={() => {
                           setSelectedId(id);
                           setUploadOpen(false);
-                          setUploadFile(null);
+                          setUploadFiles([]);
+                          setPreviewAttachment(null);
                           setUploadProgress(0);
                           navigate(adminPath(tableKey, id));
                         }}
@@ -440,7 +495,10 @@ export default function AdminPage() {
                 )}
                 {fileUrl && (
                   <button
-                    onClick={() => setPreviewOpen(true)}
+                    onClick={() => {
+                      setPreviewAttachment(latestAttachment ?? null);
+                      setPreviewOpen(true);
+                    }}
                     className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent"
                   >
                     <ExternalLinkIcon className="h-3.5 w-3.5" />
@@ -470,17 +528,20 @@ export default function AdminPage() {
                         <FileUpIcon className="h-4 w-4 text-muted-foreground" />
                         <div className="min-w-0">
                           <div className="truncate text-sm font-medium">
-                            {uploadFile?.name ?? '选择要挂到这条数据里的文件'}
+                            {uploadFiles.length > 0
+                              ? uploadFiles.map((file) => file.name).join('、')
+                              : '选择要挂到这条数据里的文件'}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            支持 PDF、Word、文本；上传后可预览，AI 总结需手动点击
+                            可一次选择多个；PDF 可直接预览，Word/README 会展示提取文本
                           </div>
                         </div>
                         <input
                           type="file"
+                          multiple
                           className="hidden"
                           onChange={(event) => {
-                            setUploadFile(event.target.files?.[0] ?? null);
+                            setUploadFiles(Array.from(event.target.files ?? []));
                             setUploadProgress(0);
                           }}
                         />
@@ -504,6 +565,62 @@ export default function AdminPage() {
                   </div>
                 )}
 
+                {attachmentList.length > 0 && (
+                  <div className="border-b border-border px-5 py-5">
+                    <h3 className="mb-3 text-base font-bold text-foreground">附件</h3>
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                      {attachmentList.map((attachment, index) => {
+                        const kind = fileKind(attachment.name, attachment.type);
+                        const attachmentUrl = toApiUrl(attachment.url);
+                        const Icon = kind.label === 'File' ? FileIcon : FileTextIcon;
+                        return (
+                          <section
+                            key={attachment.id ?? `${attachment.name}-${index}`}
+                            className="group rounded-lg border border-border bg-background p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                          >
+                            <div className="mb-3 flex items-start gap-3">
+                              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${kind.tone}`}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold text-foreground">
+                                  {attachment.name || '未命名文件'}
+                                </p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                  {kind.label}
+                                  {formatFileSize(attachment.size) ? ` · ${formatFileSize(attachment.size)}` : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setPreviewAttachment(attachment);
+                                  setPreviewOpen(true);
+                                }}
+                                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                              >
+                                查看
+                              </button>
+                              {attachmentUrl && (
+                                <a
+                                  href={attachmentUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                                >
+                                  原文件
+                                  <ExternalLinkIcon className="h-3.5 w-3.5" />
+                                </a>
+                              )}
+                            </div>
+                          </section>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-2">
                   {displayFields(fields).map((field) => {
                     const value = stringifyValue(selectedRecord[field]);
@@ -524,7 +641,7 @@ export default function AdminPage() {
                             onClick={() => setPreviewOpen(true)}
                             className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
                           >
-                            在网页里预览
+                            查看附件
                             <ExternalLinkIcon className="h-3.5 w-3.5" />
                           </button>
                         ) : (
@@ -558,7 +675,8 @@ export default function AdminPage() {
                                   onClick={() => {
                                     setTableKey(group.key);
                                     setUploadOpen(false);
-                                    setUploadFile(null);
+                                    setUploadFiles([]);
+                                    setPreviewAttachment(null);
                                     setUploadProgress(0);
                                     navigate(adminPath(group.key, id));
                                   }}
@@ -592,7 +710,7 @@ export default function AdminPage() {
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-bold">{recordTitle}</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
-                  {inlinePreview ? '网页内预览' : '此格式浏览器不能稳定直接渲染，先显示已提取文本'}
+                  {inlinePreview ? '文件预览' : '已提取文本'}
                 </p>
               </div>
               <div className="flex shrink-0 items-center gap-2">

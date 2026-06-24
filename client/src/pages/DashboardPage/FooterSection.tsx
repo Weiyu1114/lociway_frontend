@@ -5,38 +5,13 @@ import {
   MessageSquareIcon,
   DatabaseIcon,
   ExternalLinkIcon,
-  ArrowUpRightIcon,
 } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
 
-const ADMIN_URL = '/#/admin';
 const adminRecordUrl = (table: string, id?: string) => {
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
   return `${origin}/#/admin?table=${table}${id ? `&id=${encodeURIComponent(id)}` : ''}`;
 };
-
-const QUICK_LINKS = [
-  {
-    label: '业务线总览',
-    url: adminRecordUrl('business'),
-    icon: FolderIcon,
-  },
-  {
-    label: '项目机会池',
-    url: adminRecordUrl('opportunities'),
-    icon: FileTextIcon,
-  },
-  {
-    label: '任务推进',
-    url: adminRecordUrl('tasks'),
-    icon: MessageSquareIcon,
-  },
-  {
-    label: '资料与模板',
-    url: adminRecordUrl('resources'),
-    icon: DatabaseIcon,
-  },
-];
 
 function getTypeStyle(type: string) {
   switch (type) {
@@ -176,37 +151,6 @@ export default function FooterSection() {
             })}
           </div>
         )}
-      </section>
-
-      {/* 底部快捷入口 */}
-      <section className="w-full mb-4">
-        <div className="flex flex-wrap items-center gap-3">
-          {QUICK_LINKS.map((link) => {
-            const Icon = link.icon;
-            return (
-              <UniversalLink
-                key={link.label}
-                to={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 border border-border text-foreground hover:bg-accent hover:text-accent-foreground rounded-lg px-3 py-1.5 text-xs font-medium transition-colors"
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {link.label}
-              </UniversalLink>
-            );
-          })}
-
-          <UniversalLink
-            to={ADMIN_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ml-auto"
-          >
-            打开数据后台
-            <ArrowUpRightIcon className="w-3.5 h-3.5" />
-          </UniversalLink>
-        </div>
       </section>
 
       {/* 底部说明 */}

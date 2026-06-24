@@ -92,7 +92,7 @@ export default function OpportunitiesSection() {
 
   return (
     <section className="w-full">
-      <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+      <h2 className="mb-4 text-base font-extrabold tracking-wide text-foreground md:text-lg">
         重点机会
       </h2>
       <div className="bg-card rounded-xl shadow-sm overflow-hidden">
