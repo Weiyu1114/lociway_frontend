@@ -48,6 +48,13 @@ export interface IDashboardData {
     '客户/合作方': string;
     '机会名称': string;
     '资料链接'?: string;
+    '文件名'?: string;
+    '文件类型'?: string;
+    '文件URL'?: string;
+    '附件列表'?: string;
+    'AI总结'?: string;
+    '行动项'?: string;
+    '原文摘录'?: string;
   }>;
   tasks: Array<{
     _record_id?: string;
@@ -72,9 +79,12 @@ export interface IDashboardData {
     '客户名称'?: string;
     '对应业务线': string;
     '文件URL'?: string;
+    '文件名'?: string;
+    '文件类型'?: string;
     '附件列表'?: string;
     'AI总结'?: string;
     '行动项'?: string;
+    '原文摘录'?: string;
   }>;
   meetings?: Array<{
     _record_id?: string;

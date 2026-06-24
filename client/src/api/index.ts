@@ -213,11 +213,13 @@ export async function summarizeAdminAttachment(
   record: Record<string, unknown>;
   attachment: Record<string, unknown>;
   analysis: Record<string, unknown>;
+  created_tasks: Array<Record<string, unknown>>;
 }> {
   return requestJson<{
     record: Record<string, unknown>;
     attachment: Record<string, unknown>;
     analysis: Record<string, unknown>;
+    created_tasks: Array<Record<string, unknown>>;
   }>(`/api/admin/${tableKey}/${recordId}/attachments/${attachmentId}/summarize`, {
     method: 'POST',
   });

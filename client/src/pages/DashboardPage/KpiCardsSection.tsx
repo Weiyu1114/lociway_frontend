@@ -62,10 +62,10 @@ export default function KpiCardsSection() {
       iconBg: 'bg-[hsl(152_69%_95%)]',
     },
     {
-      label: '管线机会数',
+      label: '当前项目',
       value: opportunityCount,
       suffix: '个',
-      supplement: '当前跟进中',
+      supplement: '客户项目推进中',
       icon: TargetIcon,
       accent: 'text-[hsl(217_91%_60%)]',
       iconBg: 'bg-[hsl(217_91%_96%)]',
@@ -80,7 +80,7 @@ export default function KpiCardsSection() {
       iconBg: 'bg-[hsl(0_84%_96%)]',
     },
     {
-      label: '管线总金额',
+      label: '项目预计金额',
       value: totalPipelineAmount > 0 ? `¥${totalPipelineAmount}` : '—',
       suffix: totalPipelineAmount > 0 ? '万' : '',
       supplement: '预计成交金额',
