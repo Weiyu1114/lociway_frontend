@@ -12,6 +12,7 @@ const PRIORITY_ORDER: Record<string, number> = {
   'P1 近期推进': 1,
   'P2 暂存': 2,
 };
+const OWNER_ORDER = ['Rucia', 'Jason', 'Louis'];
 
 function getPriorityStyle(priority: string) {
   if (priority.includes('P0'))
@@ -83,11 +84,10 @@ export default function TasksSection() {
     return acc;
   }, {});
 
-  const owners = Object.keys(grouped).sort((a, b) => {
-    const aP0 = grouped[a].filter((task) => task['优先级']?.includes('P0')).length;
-    const bP0 = grouped[b].filter((task) => task['优先级']?.includes('P0')).length;
-    return bP0 - aP0 || grouped[b].length - grouped[a].length || a.localeCompare(b);
-  });
+  const owners = [
+    ...OWNER_ORDER.filter((owner) => grouped[owner]?.length),
+    ...Object.keys(grouped).filter((owner) => !OWNER_ORDER.includes(owner)).sort(),
+  ];
 
   const p0Count = data.tasks.filter((t) => t['优先级']?.includes('P0')).length;
 

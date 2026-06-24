@@ -4,6 +4,7 @@ import {
   deleteAdminRecord,
   fetchAdminRecords,
   fetchAdminSchema,
+  summarizeAdminAttachment,
   summarizeAdminRecord,
   toApiUrl,
   uploadAdminFile,
@@ -29,14 +30,14 @@ import { toast } from 'sonner';
 const TABLE_LABELS: Record<string, string> = {
   dashboard: '首页模块',
   business: '业务线',
-  opportunities: '机会池',
+  opportunities: '当前项目',
   tasks: '个人任务',
   resources: '资料',
   meetings: '会议记录',
 };
 
-const TITLE_FIELDS = ['标题', '业务线', '机会名称', '任务', '资料名称', '会议标题'];
-const SUBTITLE_FIELDS = ['状态', '当前阶段', '负责人', '类型', '品牌方', '会议日期'];
+const TITLE_FIELDS = ['标题', '业务线', '项目名称', '机会名称', '任务', '资料名称', '会议标题'];
+const SUBTITLE_FIELDS = ['客户名称', '状态', '当前阶段', '负责人', '类型', '品牌方', '会议日期'];
 const LONG_FIELDS = new Set([
   '内容',
   '备注',
@@ -50,6 +51,15 @@ const LONG_FIELDS = new Set([
   '风险',
   '原文摘录',
 ]);
+const TASK_OWNERS = ['Rucia', 'Jason', 'Louis'];
+function fieldOptions(tableKey: string, field: string) {
+  if (tableKey === 'business' && field === '优先级') return ['P0', 'P1', 'P2'];
+  const options: Record<string, string[]> = {
+    状态: ['待开始', '进行中', '已完成', '暂停'],
+    优先级: ['P0 本周必须', 'P1 近期推进', 'P2 暂存'],
+  };
+  return options[field];
+}
 
 type AdminRecord = Record<string, unknown> & { _record_id?: string };
 
@@ -73,7 +83,7 @@ function displayFields(fields: string[]) {
 function recordTerms(tableKey: string, record: AdminRecord) {
   const baseFields: Record<string, string[]> = {
     business: ['业务线', '定位'],
-    opportunities: ['机会名称', '客户/合作方', '业务线'],
+    opportunities: ['项目名称', '机会名称', '客户名称', '客户/合作方', '业务线'],
     tasks: ['任务', '所属项目', '负责人'],
     resources: ['资料名称', '对应业务线', '类型'],
     meetings: ['会议标题', '品牌方', '参会人'],
@@ -105,6 +115,7 @@ type Attachment = {
   size?: number;
   uploaded_at?: string;
   excerpt?: string;
+  ai_summary?: Record<string, unknown>;
 };
 
 function parseAttachmentList(value: unknown): Attachment[] {
@@ -156,6 +167,9 @@ export default function AdminPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewAttachment, setPreviewAttachment] = useState<Attachment | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryAttachment, setSummaryAttachment] = useState<Attachment | null>(null);
+  const [summarizingAttachmentId, setSummarizingAttachmentId] = useState('');
   const [allRecords, setAllRecords] = useState<Record<string, AdminRecord[]>>({});
 
   const fields = schema[tableKey] ?? [];
@@ -335,6 +349,23 @@ export default function AdminPage() {
       toast.error('AI 总结失败，请确认已上传可解析的文档');
     } finally {
       setSummarizing(false);
+    }
+  }
+
+  async function summarizeAttachment(attachment: Attachment) {
+    if (!selectedId || !attachment.id) return;
+    setSummarizingAttachmentId(attachment.id);
+    try {
+      const result = await summarizeAdminAttachment(tableKey, selectedId, attachment.id);
+      toast.success('附件 AI 总结已生成');
+      await loadRecords(tableKey, selectedId);
+      await loadAllRecords(Object.keys(schema));
+      setSummaryAttachment(result.attachment as Attachment);
+      setSummaryOpen(true);
+    } catch {
+      toast.error('附件 AI 总结失败，请确认文件可解析');
+    } finally {
+      setSummarizingAttachmentId('');
     }
   }
 
@@ -602,6 +633,25 @@ export default function AdminPage() {
                               >
                                 查看
                               </button>
+                              <button
+                                onClick={() => {
+                                  if (attachment.ai_summary) {
+                                    setSummaryAttachment(attachment);
+                                    setSummaryOpen(true);
+                                  } else {
+                                    summarizeAttachment(attachment);
+                                  }
+                                }}
+                                disabled={summarizingAttachmentId === attachment.id}
+                                className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium hover:bg-accent disabled:opacity-60"
+                              >
+                                <BotIcon className="h-3.5 w-3.5" />
+                                {summarizingAttachmentId === attachment.id
+                                  ? '总结中'
+                                  : attachment.ai_summary
+                                    ? '查看AI总结'
+                                    : 'AI总结'}
+                              </button>
                               {attachmentUrl && (
                                 <a
                                   href={attachmentUrl}
@@ -751,6 +801,70 @@ export default function AdminPage() {
         </div>
       )}
 
+      {summaryOpen && summaryAttachment?.ai_summary && (
+        <div className="fixed inset-0 z-[55] flex items-center justify-center bg-black/40 p-4">
+          <div className="flex max-h-[88vh] w-full max-w-4xl flex-col rounded-lg bg-card shadow-xl">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
+              <div className="min-w-0">
+                <h2 className="truncate text-xl font-extrabold">
+                  {stringifyValue(summaryAttachment.ai_summary.title) || 'AI 总结文稿'}
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {summaryAttachment.name} · {stringifyValue(summaryAttachment.ai_summary.generated_at).slice(0, 10)}
+                </p>
+              </div>
+              <button
+                onClick={() => setSummaryOpen(false)}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-accent"
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-4 overflow-auto p-6">
+              <section className="rounded-lg border border-border bg-background p-4">
+                <p className="mb-2 text-xs font-bold text-muted-foreground">一页结论</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {stringifyValue(summaryAttachment.ai_summary.summary) || '暂无总结'}
+                </p>
+              </section>
+
+              {[
+                ['关键判断', summaryAttachment.ai_summary.key_points],
+                ['行动项', summaryAttachment.ai_summary.action_items],
+                ['风险提醒', summaryAttachment.ai_summary.risks],
+              ].map(([label, value]) => {
+                const items = Array.isArray(value) ? value : stringifyValue(value).split('\n').filter(Boolean);
+                return (
+                  <section key={String(label)} className="rounded-lg border border-border bg-background p-4">
+                    <p className="mb-2 text-xs font-bold text-muted-foreground">{String(label)}</p>
+                    {items.length > 0 ? (
+                      <ul className="space-y-2">
+                        {items.map((item, index) => (
+                          <li key={index} className="text-sm leading-relaxed">
+                            {typeof item === 'object'
+                              ? `${stringifyValue((item as Record<string, unknown>).owner) || '待定'}：${stringifyValue((item as Record<string, unknown>).task)}`
+                              : String(item)}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">暂无</p>
+                    )}
+                  </section>
+                );
+              })}
+
+              <section className="rounded-lg border border-border bg-background p-4">
+                <p className="mb-2 text-xs font-bold text-muted-foreground">下一步建议</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {stringifyValue(summaryAttachment.ai_summary.next_steps) || '暂无'}
+                </p>
+              </section>
+            </div>
+          </div>
+        </div>
+      )}
+
       {editorOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4">
           <div className="flex max-h-[88vh] w-full max-w-3xl flex-col rounded-lg bg-card shadow-xl">
@@ -771,7 +885,46 @@ export default function AdminPage() {
                     <span className="mb-1 block text-xs font-medium text-muted-foreground">
                       {field}
                     </span>
-                    {isLong ? (
+                    {tableKey === 'tasks' && field === '负责人' ? (
+                      <div className="flex min-h-10 flex-wrap items-center gap-3 rounded-md border border-border bg-background px-3 py-2">
+                        {TASK_OWNERS.map((owner) => {
+                          const selected = (form[field] ?? '').split(/[、/,，\s]+/).includes(owner);
+                          return (
+                            <label key={owner} className="inline-flex items-center gap-1.5 text-sm">
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={(event) => {
+                                  const current = new Set((form[field] ?? '').split(/[、/,，\s]+/).filter(Boolean));
+                                  if (event.target.checked) current.add(owner);
+                                  else current.delete(owner);
+                                  setForm((value) => ({
+                                    ...value,
+                                    [field]: Array.from(current).join(' / '),
+                                  }));
+                                }}
+                              />
+                              {owner}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    ) : fieldOptions(tableKey, field) ? (
+                      <select
+                        value={form[field] ?? ''}
+                        onChange={(event) =>
+                          setForm((current) => ({ ...current, [field]: event.target.value }))
+                        }
+                        className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      >
+                        <option value="">请选择</option>
+                        {fieldOptions(tableKey, field)?.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    ) : isLong ? (
                       <textarea
                         value={form[field] ?? ''}
                         onChange={(event) =>

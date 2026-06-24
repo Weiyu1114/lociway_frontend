@@ -82,7 +82,11 @@ export default function BusinessLinesSection() {
     );
   }
 
-  const lines = data.business ?? [];
+  const lines = [...(data.business ?? [])].sort((a, b) => {
+    const aOrder = Number(a['排序'] ?? 999);
+    const bOrder = Number(b['排序'] ?? 999);
+    return aOrder - bOrder || String(a['优先级'] ?? '').localeCompare(String(b['优先级'] ?? ''));
+  });
   const activeLine = activeIndex === null ? null : lines[activeIndex];
 
   return (
@@ -108,7 +112,7 @@ export default function BusinessLinesSection() {
                 <span
                   className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusColor}`}
                 >
-                  {line['状态']}
+                  {line['优先级'] || line['状态']}
                 </span>
               </div>
 

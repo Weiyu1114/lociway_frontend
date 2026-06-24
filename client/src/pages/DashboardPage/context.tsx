@@ -17,6 +17,8 @@ export interface IDashboardData {
   };
   business: Array<{
     _record_id?: string;
+    '排序'?: string | number;
+    '优先级'?: string;
     '业务线': string;
     '报价/利润逻辑': string;
     '下一步动作': string;
@@ -30,6 +32,9 @@ export interface IDashboardData {
   }>;
   opportunities: Array<{
     _record_id?: string;
+    '客户名称'?: string;
+    '项目名称'?: string;
+    '文件夹'?: string;
     '当前阶段': string;
     '来源人': string;
     '关键风险': string;

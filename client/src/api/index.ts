@@ -194,3 +194,21 @@ export async function summarizeAdminRecord(
     method: 'POST',
   });
 }
+
+export async function summarizeAdminAttachment(
+  tableKey: string,
+  recordId: string,
+  attachmentId: string
+): Promise<{
+  record: Record<string, unknown>;
+  attachment: Record<string, unknown>;
+  analysis: Record<string, unknown>;
+}> {
+  return requestJson<{
+    record: Record<string, unknown>;
+    attachment: Record<string, unknown>;
+    analysis: Record<string, unknown>;
+  }>(`/api/admin/${tableKey}/${recordId}/attachments/${attachmentId}/summarize`, {
+    method: 'POST',
+  });
+}
