@@ -44,13 +44,13 @@ export default function HeaderSection() {
 
   return (
     <header className="w-full bg-gradient-to-r from-[hsl(228_28%_27%)] to-[hsl(228_28%_32%)]">
-      <div className="relative w-full px-5 md:px-8 lg:px-10 py-6 flex items-center justify-between gap-5">
+      <div className="relative flex w-full items-center justify-between gap-5 px-5 py-8 md:px-8 lg:px-10">
         {/* Left: Brand + Description */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+          <h1 className="text-3xl font-extrabold tracking-tight text-white md:text-5xl">
             {intro?.['标题'] ?? 'LociWay 乐沩'}
           </h1>
-          <p className="text-sm font-light text-white/65 mt-1 truncate">
+          <p className="mt-2 max-w-4xl text-base font-light leading-relaxed text-white/75 md:text-xl">
             {intro?.['内容'] ?? '用小核心团队连接外部增长资源网络，帮助出海品牌先判断、再验证、后放大。'}
           </p>
         </div>

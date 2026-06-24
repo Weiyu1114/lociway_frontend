@@ -13,7 +13,13 @@ import { Toaster } from '@client/src/components/ui/sonner';
 
 const MainApp = () => {
   React.useEffect(() => {
-    document.title = 'LociWay 乐沩';
+    const title = 'LociWay 乐沩';
+    const setTitle = () => {
+      if (document.title !== title) document.title = title;
+    };
+    setTitle();
+    const intervalId = window.setInterval(setTitle, 1000);
+    return () => window.clearInterval(intervalId);
   }, []);
 
   return (

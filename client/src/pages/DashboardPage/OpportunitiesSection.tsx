@@ -61,7 +61,7 @@ function getProbabilityColor(prob: string) {
 function Skeleton() {
   return (
     <section className="w-full">
-      <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+      <h2 className="mb-4 text-base font-extrabold tracking-wide text-foreground md:text-lg">
         重点机会
       </h2>
       <div className="bg-card rounded-xl shadow-sm p-6 space-y-4">

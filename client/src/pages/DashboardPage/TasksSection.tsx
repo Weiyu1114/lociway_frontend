@@ -1,7 +1,7 @@
-import { useDashboard } from './context';
-import { CalendarIcon, ExternalLinkIcon } from 'lucide-react';
 import dayjs from 'dayjs';
+import { CalendarIcon, ExternalLinkIcon } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
+import { useDashboard } from './context';
 
 function adminRecordUrl(id?: string) {
   return id ? `/#/admin?table=tasks&id=${encodeURIComponent(id)}` : '/#/admin?table=tasks';
@@ -24,6 +24,8 @@ function getPriorityStyle(priority: string) {
 function getStatusStyle(status: string) {
   if (status === '进行中')
     return 'bg-[hsl(217_91%_96%)] text-[hsl(217_91%_40%)]';
+  if (status === '已完成')
+    return 'bg-[hsl(152_69%_95%)] text-[hsl(152_69%_32%)]';
   return 'bg-[hsl(220_14%_95%)] text-[hsl(229_16%_47%)]';
 }
 
@@ -32,27 +34,28 @@ function formatDeadline(dateStr: string | undefined): string {
   return dayjs(dateStr).format('M月D日');
 }
 
+function ownerNames(raw: string | undefined): string[] {
+  if (!raw) return ['未分配'];
+  return raw
+    .split(/[、/,，\s]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function Skeleton() {
   return (
     <section className="w-full">
-      <div className="h-4 w-20 rounded animate-pulse bg-[hsl(24_100%_97%)] mb-4" />
-      <div className="bg-card rounded-xl shadow-sm overflow-hidden">
-        <div className="bg-[hsl(210_28%_96%)] px-5 py-3 flex gap-4">
-          {[16, 12, 10, 10, 12, 10].map((w, i) => (
-            <div
-              key={i}
-              className="h-3 rounded animate-pulse bg-[hsl(24_100%_97%)]"
-              style={{ width: `${w}%` }}
-            />
-          ))}
-        </div>
-        {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="px-5 py-4 flex items-center gap-4">
-            <div className="flex-1 min-w-0 space-y-2">
-              <div className="h-3.5 w-3/4 rounded animate-pulse bg-[hsl(24_100%_97%)]" />
-              <div className="h-3 w-1/2 rounded animate-pulse bg-[hsl(24_100%_97%)]" />
-            </div>
-            <div className="h-5 w-20 rounded-full animate-pulse bg-[hsl(24_100%_97%)]" />
+      <div className="mb-4 h-5 w-24 animate-pulse rounded bg-[hsl(24_100%_97%)]" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rounded-xl bg-card p-4 shadow-sm">
+            <div className="mb-4 h-5 w-20 animate-pulse rounded bg-[hsl(24_100%_97%)]" />
+            {[0, 1].map((j) => (
+              <div key={j} className="mb-3 rounded-lg border border-border p-3">
+                <div className="mb-2 h-4 w-4/5 animate-pulse rounded bg-[hsl(24_100%_97%)]" />
+                <div className="h-3 w-2/3 animate-pulse rounded bg-[hsl(24_100%_97%)]" />
+              </div>
+            ))}
           </div>
         ))}
       </div>
@@ -72,143 +75,91 @@ export default function TasksSection() {
     return aOrder - bOrder;
   });
 
+  const grouped = sortedTasks.reduce<Record<string, typeof sortedTasks>>((acc, task) => {
+    ownerNames(task['负责人']).forEach((owner) => {
+      acc[owner] = acc[owner] ?? [];
+      acc[owner].push(task);
+    });
+    return acc;
+  }, {});
+
+  const owners = Object.keys(grouped).sort((a, b) => {
+    const aP0 = grouped[a].filter((task) => task['优先级']?.includes('P0')).length;
+    const bP0 = grouped[b].filter((task) => task['优先级']?.includes('P0')).length;
+    return bP0 - aP0 || grouped[b].length - grouped[a].length || a.localeCompare(b);
+  });
+
   const p0Count = data.tasks.filter((t) => t['优先级']?.includes('P0')).length;
 
   return (
     <section className="w-full">
-      <div className="flex items-center gap-2.5 mb-4">
-        <h2 className="text-xs font-bold text-[hsl(229_16%_47%)] uppercase tracking-widest">
-          本周任务
+      <div className="mb-4 flex items-center gap-3">
+        <h2 className="text-base font-extrabold tracking-wide text-foreground md:text-lg">
+          个人任务看板
         </h2>
         {p0Count > 0 && (
-          <span className="text-xs font-semibold bg-[hsl(0_84%_96%)] text-[hsl(0_72%_45%)] rounded-full px-2 py-0.5">
-            {p0Count} 项紧急
+          <span className="rounded-full bg-[hsl(0_84%_96%)] px-2.5 py-0.5 text-xs font-semibold text-[hsl(0_72%_45%)]">
+            {p0Count} 项 P0
           </span>
         )}
       </div>
 
-      {/* Desktop table view */}
-      <div className="hidden md:block bg-card rounded-xl shadow-sm overflow-hidden">
-        <div className="bg-[hsl(210_28%_96%)] px-5 py-2 flex items-center gap-4">
-          <span className="flex-1 min-w-0 text-xs font-bold text-[hsl(229_16%_47%)] uppercase tracking-wider">
-            任务
-          </span>
-          <span className="w-28 shrink-0 text-xs font-bold text-[hsl(229_16%_47%)] uppercase tracking-wider text-center">
-            所属项目
-          </span>
-          <span className="w-16 shrink-0 text-xs font-bold text-[hsl(229_16%_47%)] uppercase tracking-wider text-center">
-            负责人
-          </span>
-          <span className="w-28 shrink-0 text-xs font-bold text-[hsl(229_16%_47%)] uppercase tracking-wider text-center">
-            优先级
-          </span>
-          <span className="w-20 shrink-0 text-xs font-bold text-[hsl(229_16%_47%)] uppercase tracking-wider text-center">
-            截止时间
-          </span>
-          <span className="w-20 shrink-0 text-xs font-bold text-[hsl(229_16%_47%)] uppercase tracking-wider text-center">
-            状态
-          </span>
-        </div>
-
-        {sortedTasks.map((task, i) => (
-          <UniversalLink
-            key={i}
-            to={adminRecordUrl(task._record_id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-4 px-5 py-3 border-b border-border last:border-b-0 hover:bg-[hsl(24_100%_97%)] transition-colors group cursor-pointer"
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate group-hover:text-[hsl(25_95%_53%)] transition-colors">
-                {task['任务']}
-              </p>
-              {task['备注'] && (
-                <p className="text-xs text-[hsl(229_16%_47%)] mt-0.5 truncate">
-                  {task['备注']}
-                </p>
-              )}
-            </div>
-            <span className="w-28 shrink-0 text-sm text-[hsl(229_16%_47%)] text-center truncate">
-              {task['所属项目']}
-            </span>
-            <span className="w-16 shrink-0 text-sm text-[hsl(229_16%_47%)] text-center truncate">
-              {task['负责人']?.split('/')[0]?.trim()}
-            </span>
-            <div className="w-28 shrink-0 flex justify-center">
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${getPriorityStyle(task['优先级'])}`}
-              >
-                {task['优先级']}
-              </span>
-            </div>
-            <div className="w-20 shrink-0 flex items-center justify-center gap-1 text-sm text-[hsl(229_16%_47%)]">
-              <CalendarIcon className="w-3.5 h-3.5 shrink-0" />
-              <span>{formatDeadline(task['截止时间'])}</span>
-            </div>
-            <div className="w-20 shrink-0 flex justify-center">
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${getStatusStyle(task['状态'])}`}
-              >
-                {task['状态']}
-              </span>
-            </div>
-            <ExternalLinkIcon className="w-3.5 h-3.5 shrink-0 text-[hsl(229_16%_47%)] opacity-0 group-hover:opacity-60 transition-opacity" />
-          </UniversalLink>
-        ))}
-      </div>
-
-      {/* Mobile card view */}
-      <div className="md:hidden space-y-3">
-        {sortedTasks.map((task, i) => (
-          <UniversalLink
-            key={i}
-            to={adminRecordUrl(task._record_id)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block bg-card rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start justify-between gap-2 mb-2.5">
-              <p className="text-sm font-medium text-foreground flex-1 min-w-0">
-                {task['任务']}
-              </p>
-              <span
-                className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getStatusStyle(task['状态'])}`}
-              >
-                {task['状态']}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 2xl:grid-cols-4">
+        {owners.map((owner) => (
+          <section key={owner} className="min-h-48 rounded-xl bg-card p-4 shadow-sm">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-lg font-extrabold text-foreground">{owner}</h3>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                {grouped[owner].length} 项
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-              <span
-                className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${getPriorityStyle(task['优先级'])}`}
-              >
-                {task['优先级']}
-              </span>
-              <span className="text-xs text-[hsl(229_16%_47%)] bg-[hsl(220_14%_96%)] rounded-full px-2 py-0.5">
-                {task['所属项目']}
-              </span>
+            <div className="space-y-3">
+              {grouped[owner].map((task, index) => (
+                <UniversalLink
+                  key={`${task._record_id ?? task['任务']}-${index}`}
+                  to={adminRecordUrl(task._record_id)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group block rounded-lg border border-border bg-background p-3 transition-colors hover:bg-[hsl(24_100%_97%)]"
+                >
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <p className="min-w-0 text-sm font-semibold leading-snug text-foreground group-hover:text-[hsl(25_95%_45%)]">
+                      {task['任务']}
+                    </p>
+                    <ExternalLinkIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-70" />
+                  </div>
+
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getPriorityStyle(task['优先级'])}`}>
+                      {task['优先级']}
+                    </span>
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${getStatusStyle(task['状态'])}`}>
+                      {task['状态']}
+                    </span>
+                  </div>
+
+                  <p className="mb-2 truncate text-xs text-muted-foreground">
+                    {task['所属项目'] || '未绑定项目'}
+                  </p>
+
+                  <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <CalendarIcon className="h-3.5 w-3.5" />
+                      {formatDeadline(task['截止时间'])}
+                    </span>
+                    {task['产出物'] && <span className="truncate">{task['产出物']}</span>}
+                  </div>
+
+                  {task['备注'] && (
+                    <p className="mt-2 border-t border-border pt-2 text-xs leading-relaxed text-muted-foreground">
+                      {task['备注']}
+                    </p>
+                  )}
+                </UniversalLink>
+              ))}
             </div>
-
-            <div className="flex items-center justify-between text-xs text-[hsl(229_16%_47%)]">
-              <span>负责人: {task['负责人']}</span>
-              <span className="flex items-center gap-1">
-                <CalendarIcon className="w-3 h-3" />
-                {formatDeadline(task['截止时间'])}
-              </span>
-            </div>
-
-            {task['备注'] && (
-              <p className="text-xs text-[hsl(229_16%_47%)] mt-2 pt-2 border-t border-border">
-                {task['备注']}
-              </p>
-            )}
-
-            {task['产出物'] && (
-              <p className="text-xs text-[hsl(229_16%_47%)] mt-1.5">
-                产出物: {task['产出物']}
-              </p>
-            )}
-          </UniversalLink>
+          </section>
         ))}
       </div>
     </section>

@@ -46,7 +46,7 @@ export default function MeetingSummariesSection() {
     <section className="w-full">
       <div className="mb-4 flex items-center gap-2">
         <CalendarDaysIcon className="h-4 w-4 text-primary" />
-        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+        <h2 className="text-base font-extrabold tracking-wide text-foreground md:text-lg">
           会议纪要日历
         </h2>
       </div>
@@ -75,7 +75,7 @@ export default function MeetingSummariesSection() {
               <div className="min-w-0">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
-                    <h3 className="truncate text-base font-bold text-foreground">
+                    <h3 className="truncate text-lg font-extrabold text-foreground">
                       {meeting['会议标题'] || '未命名会议'}
                     </h3>
                     <p className="mt-0.5 text-xs text-muted-foreground">

@@ -48,10 +48,10 @@ export default function PhaseFocusSection() {
             <span className="inline-block bg-[hsl(24_100%_97%)] text-[hsl(25_85%_42%)] text-[11px] font-medium rounded-full px-2 py-0.5 mb-2">
               {currentPhase['标签']}
             </span>
-            <h3 className="text-sm font-bold text-foreground mb-1.5">
+            <h3 className="mb-2 text-xl font-extrabold text-foreground">
               {currentPhase['标题']}
             </h3>
-            <p className="text-sm text-foreground leading-relaxed">
+            <p className="text-base leading-relaxed text-foreground">
               {currentPhase['内容']}
             </p>
           </div>
@@ -60,7 +60,7 @@ export default function PhaseFocusSection() {
         {/* 本周重点 */}
         {weeklyFocus && (
           <div className="bg-card rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow duration-200">
-            <h3 className="text-sm font-bold text-foreground mb-3">
+            <h3 className="mb-3 text-xl font-extrabold text-foreground">
               {weeklyFocus['标题']}
             </h3>
             <ul>
@@ -74,7 +74,7 @@ export default function PhaseFocusSection() {
                   <span className="text-xs font-bold text-primary shrink-0 w-5 text-center leading-5">
                     {idx + 1}
                   </span>
-                  <span className="text-sm text-foreground leading-5">{item}</span>
+                  <span className="text-base leading-6 text-foreground">{item}</span>
                 </li>
               ))}
             </ul>

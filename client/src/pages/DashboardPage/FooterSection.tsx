@@ -8,11 +8,12 @@ import {
   ArrowUpRightIcon,
 } from 'lucide-react';
 import { UniversalLink } from '@lark-apaas/client-toolkit/components/UniversalLink';
-import { toApiUrl } from '@/api';
 
 const ADMIN_URL = '/#/admin';
-const adminRecordUrl = (table: string, id?: string) =>
-  id ? `/#/admin?table=${table}&id=${encodeURIComponent(id)}` : `/#/admin?table=${table}`;
+const adminRecordUrl = (table: string, id?: string) => {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return `${origin}/#/admin?table=${table}${id ? `&id=${encodeURIComponent(id)}` : ''}`;
+};
 
 const QUICK_LINKS = [
   {
@@ -117,7 +118,7 @@ export default function FooterSection() {
     <>
       {/* 资料入口 */}
       <section className="w-full">
-        <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">
+        <h2 className="mb-4 text-base font-extrabold tracking-wide text-foreground md:text-lg">
           资料入口
         </h2>
         {loading || !data ? (
@@ -128,9 +129,7 @@ export default function FooterSection() {
               const typeStyle = getTypeStyle(mat['类型'] ?? '');
               const Icon = getTypeIcon(mat['类型'] ?? '');
               const bizColor = getBizLineColor(mat['对应业务线'] ?? '');
-              const materialUrl = mat['文件URL']
-                ? toApiUrl(mat['文件URL'])
-                : adminRecordUrl('resources', mat._record_id);
+              const materialUrl = adminRecordUrl('resources', mat._record_id);
 
               return (
                 <UniversalLink
@@ -151,7 +150,7 @@ export default function FooterSection() {
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-semibold text-foreground leading-snug mb-2 group-hover:text-primary transition-colors">
+                  <h3 className="mb-2 text-base font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
                     {mat['资料名称'] ?? '未命名资料'}
                   </h3>
 
@@ -169,7 +168,7 @@ export default function FooterSection() {
                   </div>
 
                   <div className="mt-3 flex items-center text-xs text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <span>{mat['文件URL'] ? '预览资料' : '进入数据后台'}</span>
+                    <span>进入资料详情</span>
                     <ExternalLinkIcon className="w-3 h-3 ml-1" />
                   </div>
                 </UniversalLink>
